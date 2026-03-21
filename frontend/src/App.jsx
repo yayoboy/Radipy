@@ -1080,6 +1080,43 @@ setSchemaWithHistory(INITIAL_SCHEMA);
 
                 <span style={{ fontSize: "11px", color: "#858585" }}>Properties & Events</span>
                 {Object.keys(selectedComp.props).map(key => {
+                  if (selectedComp.type === 'ttk.PanedWindow' && key === 'paneCount') {
+                    return (
+                      <div key={key} style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                        <span style={{ fontSize: "10px", color: "#ccc" }}>paneCount:</span>
+                        <select
+                          value={selectedComp.props.paneCount || 2}
+                          onChange={e => {
+                            const newCount = parseInt(e.target.value);
+                            setSchemaWithHistory(prev => {
+                              const newPages = prev.pages.map((page, pi) => {
+                                if (pi !== activePage) return page;
+                                return {
+                                  ...page,
+                                  components: page.components.map(c => {
+                                    if (c.id !== selectedId) return c;
+                                    const existingPanes = c.panes || [];
+                                    return {
+                                      ...c,
+                                      props: { ...c.props, paneCount: newCount },
+                                      panes: Array.from({ length: newCount }, (_, i) =>
+                                        existingPanes[i] || { id: `${c.id}_pane_${i}`, components: [] }
+                                      )
+                                    };
+                                  })
+                                };
+                              });
+                              return { ...prev, pages: newPages };
+                            });
+                          }}
+                          style={{ background: "#3c3c3c", border: "1px solid #555", color: "white", padding: "3px" }}
+                        >
+                          <option value={2}>2</option>
+                          <option value={3}>3</option>
+                        </select>
+                      </div>
+                    );
+                  }
                   const isColor = ["bg", "fg", "color"].includes(key);
                   return (
                     <div key={key} style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
