@@ -108,4 +108,12 @@ describe('App Component - Basic', () => {
       expect(screen.getByText(/window properties/i)).toBeInTheDocument();
     });
   });
+
+  describe('Canvas', () => {
+    test('canvas resize handle renders', () => {
+      localStorage.clear();
+      render(<App />);
+      expect(document.querySelector('[data-testid="canvas-resize-handle"]')).toBeInTheDocument();
+    });
+  });
 });

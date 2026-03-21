@@ -252,6 +252,39 @@ document.addEventListener('mousemove', doDrag);
   document.addEventListener('mouseup', stopDrag);
 };
 
+  const startCanvasResize = (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const startWidth = schema.window?.width ?? 800;
+    const startHeight = schema.window?.height ?? 600;
+    let finalWidth = startWidth;
+    let finalHeight = startHeight;
+
+    const doDrag = (dragEvent) => {
+      finalWidth = Math.max(400, snapToGrid(startWidth + (dragEvent.clientX - startX), gridEnabled));
+      finalHeight = Math.max(300, snapToGrid(startHeight + (dragEvent.clientY - startY), gridEnabled));
+      setSchema(prev => ({
+        ...prev,
+        window: { ...prev.window, width: finalWidth, height: finalHeight }
+      }));
+    };
+
+    const stopDrag = () => {
+      document.removeEventListener('mousemove', doDrag);
+      document.removeEventListener('mouseup', stopDrag);
+      setSchemaWithHistory(prev => ({
+        ...prev,
+        window: { ...prev.window, width: finalWidth, height: finalHeight }
+      }));
+    };
+
+    document.addEventListener('mousemove', doDrag);
+    document.addEventListener('mouseup', stopDrag);
+  };
+
 // ---- Dati ----
 const updateComponentProps = (id, key, value) => {
     setSchemaWithHistory(prev => {
@@ -745,7 +778,7 @@ setSchemaWithHistory(INITIAL_SCHEMA);
           <div style={{ flex: 1, padding: "20px", overflow: "auto", display: "flex", justifyContent: "center", alignItems: "flex-start" }}>
             <div 
               ref={canvasRef} onDrop={handleDropOnCanvas} onDragOver={handleDragOver}
-              style={{ width: "800px", height: "600px", backgroundColor: "#2d2d2d", position: "relative", border: "1px solid #3c3c3c", boxShadow: "0 10px 30px rgba(0,0,0,0.5)", backgroundImage: "linear-gradient(#3c3c3c 1px, transparent 1px), linear-gradient(90deg, #3c3c3c 1px, transparent 1px)", backgroundSize: "20px 20px" }}
+              style={{ width: `${schema.window?.width ?? 800}px`, height: `${schema.window?.height ?? 600}px`, backgroundColor: "#2d2d2d", position: "relative", border: "1px solid #3c3c3c", boxShadow: "0 10px 30px rgba(0,0,0,0.5)", backgroundImage: "linear-gradient(#3c3c3c 1px, transparent 1px), linear-gradient(90deg, #3c3c3c 1px, transparent 1px)", backgroundSize: "20px 20px" }}
             >
 {currentComponents.map(comp => (
           <div
@@ -793,6 +826,23 @@ setSchemaWithHistory(INITIAL_SCHEMA);
             </div>
           </div>
         )}
+        {/* Canvas resize handle */}
+        <div
+          data-testid="canvas-resize-handle"
+          onMouseDown={startCanvasResize}
+          style={{
+            position: "absolute",
+            right: "-6px",
+            bottom: "-6px",
+            width: "12px",
+            height: "12px",
+            backgroundColor: "#c586c0",
+            cursor: "se-resize",
+            borderRadius: "50%",
+            zIndex: 200,
+            border: "2px solid #1e1e1e"
+          }}
+        />
             </div>
           </div>
         </section>
