@@ -300,12 +300,18 @@ updateComponentLayout(data.id, { x, y });
       document.removeEventListener('mouseup', stopDrag);
       setIsResizing(false);
       // Commit the final resize as ONE history entry
-      setSchemaWithHistory(prev => {
-        const newPages = [...prev.pages];
-        const c = newPages[activePage].components.find(comp => comp.id === id);
-        if (c) c.layout = { ...c.layout, width: finalWidth, height: finalHeight };
-        return { ...prev, pages: newPages };
-      });
+      setSchemaWithHistory(prev => ({
+        ...prev,
+        pages: prev.pages.map((page, pi) => {
+          if (pi !== activePage) return page;
+          return {
+            ...page,
+            components: page.components.map(c =>
+              c.id !== id ? c : { ...c, layout: { ...c.layout, width: finalWidth, height: finalHeight } }
+            )
+          };
+        })
+      }));
     };
 
 document.addEventListener('mousemove', doDrag);
@@ -347,29 +353,46 @@ document.addEventListener('mousemove', doDrag);
 
 // ---- Dati ----
 const updateComponentProps = (id, key, value) => {
-    setSchemaWithHistory(prev => {
-      const newPages = [...prev.pages];
-      const comp = newPages[activePage].components.find(c => c.id === id);
-      if(comp) comp.props[key] = value;
-      return { ...prev, pages: newPages };
-    });
+    setSchemaWithHistory(prev => ({
+      ...prev,
+      pages: prev.pages.map((page, pi) => {
+        if (pi !== activePage) return page;
+        return {
+          ...page,
+          components: page.components.map(c =>
+            c.id !== id ? c : { ...c, props: { ...c.props, [key]: value } }
+          )
+        };
+      })
+    }));
   };
 
-  const updateComponentLayout = (id, newLayoutVals) => {
-    setSchemaWithHistory(prev => {
-      const newPages = [...prev.pages];
-      const comp = newPages[activePage].components.find(c => c.id === id);
-      if(comp) comp.layout = { ...comp.layout, ...newLayoutVals };
-      return { ...prev, pages: newPages };
-    });
+  const updateComponentLayout = (id, updates) => {
+    setSchemaWithHistory(prev => ({
+      ...prev,
+      pages: prev.pages.map((page, pi) => {
+        if (pi !== activePage) return page;
+        return {
+          ...page,
+          components: page.components.map(c =>
+            c.id !== id ? c : { ...c, layout: { ...c.layout, ...updates } }
+          )
+        };
+      })
+    }));
   };
 
   const deleteComponent = (id) => {
-    setSchemaWithHistory(prev => {
-      const newPages = [...prev.pages];
-      newPages[activePage].components = newPages[activePage].components.filter(c => c.id !== id);
-      return { ...prev, pages: newPages };
-    });
+    setSchemaWithHistory(prev => ({
+      ...prev,
+      pages: prev.pages.map((page, pi) => {
+        if (pi !== activePage) return page;
+        return {
+          ...page,
+          components: page.components.filter(c => c.id !== id)
+        };
+      })
+    }));
     if(selectedId === id) setSelectedId(null);
   };
 
