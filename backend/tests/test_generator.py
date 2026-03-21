@@ -306,3 +306,55 @@ def test_window_menubar_with_theme():
     code = generate_tkinter_code(project)
     assert "import tkinter as tk" in code
     assert "menubar = tk.Menu(self)" in code
+
+
+def test_panedwindow_generates_frames_and_add():
+    project = {
+        "theme": "",
+        "pages": [{
+            "name": "Main",
+            "components": [{
+                "type": "ttk.PanedWindow",
+                "id": "paned_1",
+                "props": {"orient": "horizontal", "paneCount": 2, "sashwidth": 4},
+                "layout": {"x": 0, "y": 0, "width": 400, "height": 300},
+                "panes": [
+                    {"id": "paned_1_pane_0", "components": []},
+                    {"id": "paned_1_pane_1", "components": []}
+                ]
+            }]
+        }]
+    }
+    code = generate_tkinter_code(project)
+    assert "self.paned_1 = ttk.PanedWindow" in code
+    assert "self._frame_paned_1_pane_0 = ttk.Frame(self.paned_1)" in code
+    assert "self.paned_1.add(self._frame_paned_1_pane_0" in code
+    assert "self._frame_paned_1_pane_1 = ttk.Frame(self.paned_1)" in code
+    assert "self.paned_1.add(self._frame_paned_1_pane_1" in code
+
+
+def test_panedwindow_nested_widgets():
+    project = {
+        "theme": "",
+        "pages": [{
+            "name": "Main",
+            "components": [{
+                "type": "ttk.PanedWindow",
+                "id": "paned_1",
+                "props": {"orient": "horizontal", "paneCount": 2, "sashwidth": 4},
+                "layout": {"x": 0, "y": 0, "width": 400, "height": 300},
+                "panes": [
+                    {"id": "paned_1_pane_0", "components": [
+                        {"type": "Button", "id": "btn_1",
+                         "parentId": "paned_1_pane_0",
+                         "props": {"text": "Click"},
+                         "layout": {"x": 10, "y": 10, "width": 80, "height": 30}}
+                    ]},
+                    {"id": "paned_1_pane_1", "components": []}
+                ]
+            }]
+        }]
+    }
+    code = generate_tkinter_code(project)
+    assert "self.btn_1 = tk.Button(self._frame_paned_1_pane_0" in code
+    assert "self.btn_1.place(x=10, y=10" in code

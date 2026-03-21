@@ -101,7 +101,7 @@ def generate_tkinter_code(project_json):
             props = comp.get("props", {})
             layout = comp.get("layout", {})
 
-            base_props = {k: v for k, v in props.items() if k not in ["tabs", "iconName", "color", "size", "commandEvent"]}
+            base_props = {k: v for k, v in props.items() if k not in ["tabs", "iconName", "color", "size", "commandEvent", "paneCount"]}
 
             if "commandEvent" in props and props["commandEvent"].strip():
                 cmd_fn = props["commandEvent"].strip()
@@ -124,6 +124,17 @@ def generate_tkinter_code(project_json):
                 else:
                     kwargs_list.append(f"{k}={v}")
             kwargs_str = ", ".join(kwargs_list)
+
+            x = layout.get("x", 0)
+            y = layout.get("y", 0)
+            width = layout.get("width")
+            height = layout.get("height")
+
+            place_params = f"x={x}, y={y}"
+            if width is not None:
+                place_params += f", width={width}"
+            if height is not None:
+                place_params += f", height={height}"
 
             if comp_type == "ttk.Notebook":
                 lines.append(f"        {comp_id} = ttk.Notebook({parent}, {kwargs_str})")
@@ -157,6 +168,62 @@ def generate_tkinter_code(project_json):
                 lines.append(f"        self.canvas_{comp.get('id')} = FigureCanvasTkAgg(self.fig_{comp.get('id')}, master={parent})")
                 lines.append(f"        {comp_id} = self.canvas_{comp.get('id')}.get_tk_widget()")
 
+            elif comp_type == "ttk.PanedWindow":
+                orient = props.get("orient", "horizontal")
+                sashwidth = props.get("sashwidth", 4)
+                lines.append(f"        {comp_id} = ttk.PanedWindow({parent}, orient='{orient}', sashwidth={sashwidth})")
+                lines.append(f"        {comp_id}.place({place_params})")
+                lines.append("")
+
+                # Generate frames for each pane
+                panes = comp.get("panes", [])
+                for pane in panes:
+                    pane_id = pane.get("id", "")
+                    frame_var = f"self._frame_{pane_id.replace('-', '_')}"
+                    # Always use ttk.Frame for PanedWindow panes
+                    frame_cls = "ttk.Frame"
+                    lines.append(f"        {frame_var} = {frame_cls}({comp_id})")
+                    lines.append(f"        {comp_id}.add({frame_var}, weight=1)")
+                    lines.append("")
+
+                    # Generate child components inside this pane
+                    for child in pane.get("components", []):
+                        child_type = child.get("type")
+                        child_id = f"self.{child.get('id')}"
+                        child_props = child.get("props", {})
+                        child_layout = child.get("layout", {})
+                        child_base_props = {k: v for k, v in child_props.items()
+                                            if k not in ["tabs", "iconName", "color", "size", "commandEvent", "paneCount"]}
+                        if "commandEvent" in child_props and child_props["commandEvent"].strip():
+                            cmd_fn = child_props["commandEvent"].strip()
+                            commands.add(cmd_fn)
+                            child_base_props["command"] = f"self.{cmd_fn}"
+                        child_kwargs = ", ".join(
+                            f"{k}={v}" if k == "command" else
+                            f"{k}='{v}'" if isinstance(v, str) else f"{k}={v}"
+                            for k, v in child_base_props.items()
+                        )
+                        if theme:
+                            child_cls = child_type.split(".")[1] if child_type.startswith("ttk.") else child_type
+                            lines.append(f"        {child_id} = ttk.{child_cls}({frame_var}, {child_kwargs})")
+                        else:
+                            if child_type.startswith("ttk."):
+                                child_cls = child_type.split(".")[1]
+                                lines.append(f"        {child_id} = ttk.{child_cls}({frame_var}, {child_kwargs})")
+                            else:
+                                lines.append(f"        {child_id} = tk.{child_type}({frame_var}, {child_kwargs})")
+                        cx = child_layout.get("x", 0)
+                        cy = child_layout.get("y", 0)
+                        cw = child_layout.get("width")
+                        ch = child_layout.get("height")
+                        cp = f"x={cx}, y={cy}"
+                        if cw: cp += f", width={cw}"
+                        if ch: cp += f", height={ch}"
+                        lines.append(f"        {child_id}.place({cp})")
+                        lines.append("")
+
+                continue  # Skip the generic place() call at end of loop
+
             else:
                 if theme:
                     widget_class = comp_type.split(".")[1] if comp_type.startswith("ttk.") else comp_type
@@ -167,17 +234,6 @@ def generate_tkinter_code(project_json):
                         lines.append(f"        {comp_id} = ttk.{widget_class}({parent}, {kwargs_str})")
                     else:
                         lines.append(f"        {comp_id} = tk.{comp_type}({parent}, {kwargs_str})")
-
-            x = layout.get("x", 0)
-            y = layout.get("y", 0)
-            width = layout.get("width")
-            height = layout.get("height")
-
-            place_params = f"x={x}, y={y}"
-            if width is not None:
-                place_params += f", width={width}"
-            if height is not None:
-                place_params += f", height={height}"
 
             lines.append(f"        {comp_id}.place({place_params})")
             lines.append("")
