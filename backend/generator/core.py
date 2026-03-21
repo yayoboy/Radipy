@@ -170,8 +170,7 @@ def generate_tkinter_code(project_json):
 
             elif comp_type == "ttk.PanedWindow":
                 orient = props.get("orient", "horizontal")
-                sashwidth = props.get("sashwidth", 4)
-                lines.append(f"        {comp_id} = ttk.PanedWindow({parent}, orient='{orient}', sashwidth={sashwidth})")
+                lines.append(f"        {comp_id} = ttk.PanedWindow({parent}, orient='{orient}')")
                 lines.append(f"        {comp_id}.place({place_params})")
                 lines.append("")
 
