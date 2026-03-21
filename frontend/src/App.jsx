@@ -884,13 +884,13 @@ setSchemaWithHistory(INITIAL_SCHEMA);
                   <div>
                     <span style={{ fontSize: "10px" }}>W:</span>
                     <input type="number" value={schema.window?.minWidth ?? 0}
-                      onChange={e => setSchemaWithHistory(prev => ({ ...prev, window: { ...prev.window, minWidth: parseInt(e.target.value)||0 } }))}
+                      onChange={e => setSchemaWithHistory(prev => ({ ...prev, window: { ...prev.window, minWidth: Math.max(0, parseInt(e.target.value)||0) } }))}
                       style={{ width: "100%", background: "#3c3c3c", border: "1px solid #555", color: "white", padding: "3px" }} />
                   </div>
                   <div>
                     <span style={{ fontSize: "10px" }}>H:</span>
                     <input type="number" value={schema.window?.minHeight ?? 0}
-                      onChange={e => setSchemaWithHistory(prev => ({ ...prev, window: { ...prev.window, minHeight: parseInt(e.target.value)||0 } }))}
+                      onChange={e => setSchemaWithHistory(prev => ({ ...prev, window: { ...prev.window, minHeight: Math.max(0, parseInt(e.target.value)||0) } }))}
                       style={{ width: "100%", background: "#3c3c3c", border: "1px solid #555", color: "white", padding: "3px" }} />
                   </div>
                 </div>
@@ -911,7 +911,7 @@ setSchemaWithHistory(INITIAL_SCHEMA);
 
                 <span style={{ fontSize: "10px", color: "#ccc" }}>bg (background):</span>
                 <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
-                  <input type="color" value={schema.window?.bg || "#f0f0f0"}
+                  <input type="color" value={schema.window?.bg || "#000000"}
                     onChange={e => setSchemaWithHistory(prev => ({ ...prev, window: { ...prev.window, bg: e.target.value } }))}
                     style={{ width: "40px", cursor: "pointer", padding: "0", border: "none", background: "transparent" }} />
                   <input type="text" value={schema.window?.bg ?? ""}
