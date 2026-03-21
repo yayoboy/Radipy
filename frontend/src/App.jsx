@@ -162,7 +162,7 @@ function App() {
     const findTargetPane = (dropX, dropY) => {
       const comps = schema.pages[activePage]?.components || [];
       for (const comp of comps) {
-        if (comp.type !== 'ttk.PanedWindow' || !comp.panes) continue;
+        if (comp.type !== 'ttk.PanedWindow' || !comp.panes || comp.panes.length === 0) continue;
         const { x, y, width, height } = comp.layout;
         if (dropX < x || dropX > x + width || dropY < y || dropY > y + height) continue;
         // Inside this PanedWindow — find which pane
@@ -211,21 +211,36 @@ function App() {
         }));
       }
 
-      setSchemaWithHistory(prev => {
-        const newPages = [...prev.pages];
-        if (targetPane) {
-          // Add to pane
-          const panedComp = newPages[activePage].components.find(c => c.id === targetPane.panedId);
-          if (panedComp) {
-            const pane = panedComp.panes.find(p => p.id === targetPane.paneId);
-            if (pane) pane.components.push(newComp);
-          }
-        } else {
-          // Add to page top-level
-          newPages[activePage].components.push(newComp);
-        }
-        return { ...prev, pages: newPages };
-      });
+      if (targetPane) {
+        setSchemaWithHistory(prev => {
+          const newPages = prev.pages.map((page, pi) => {
+            if (pi !== activePage) return page;
+            return {
+              ...page,
+              components: page.components.map(c => {
+                if (c.id !== targetPane.panedId) return c;
+                return {
+                  ...c,
+                  panes: c.panes.map(p =>
+                    p.id !== targetPane.paneId
+                      ? p
+                      : { ...p, components: [...p.components, newComp] }
+                  )
+                };
+              })
+            };
+          });
+          return { ...prev, pages: newPages };
+        });
+      } else {
+        setSchemaWithHistory(prev => {
+          const newPages = prev.pages.map((page, pi) => {
+            if (pi !== activePage) return page;
+            return { ...page, components: [...page.components, newComp] };
+          });
+          return { ...prev, pages: newPages };
+        });
+      }
       setSelectedId(newComp.id);
       setDragPreview(null);
     }
@@ -482,7 +497,7 @@ setSchemaWithHistory(INITIAL_SCHEMA);
       case 'ttk.PanedWindow': {
         const orient = comp.props?.orient || 'horizontal';
         const panes = comp.panes || [];
-        const paneCount = comp.props?.paneCount || 2;
+        const paneCount = (comp.panes && comp.panes.length > 0) ? comp.panes.length : (comp.props?.paneCount || 2);
         const isHorizontal = orient === 'horizontal';
 
         return (
@@ -498,7 +513,7 @@ setSchemaWithHistory(INITIAL_SCHEMA);
             {Array.from({ length: paneCount }, (_, i) => {
               const pane = panes[i] || { id: `pane_${i}`, components: [] };
               return (
-                <React.Fragment key={i}>
+                <React.Fragment key={pane.id || i}>
                   <div
                     data-paneid={pane.id}
                     style={{
