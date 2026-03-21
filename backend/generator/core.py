@@ -217,8 +217,8 @@ def generate_tkinter_code(project_json):
                         cw = child_layout.get("width")
                         ch = child_layout.get("height")
                         cp = f"x={cx}, y={cy}"
-                        if cw: cp += f", width={cw}"
-                        if ch: cp += f", height={ch}"
+                        if cw is not None: cp += f", width={cw}"
+                        if ch is not None: cp += f", height={ch}"
                         lines.append(f"        {child_id}.place({cp})")
                         lines.append("")
 
