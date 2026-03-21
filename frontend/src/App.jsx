@@ -854,7 +854,83 @@ setSchemaWithHistory(INITIAL_SCHEMA);
             <h3 style={{ margin: "0 0 15px 0", fontSize: "14px", color: "#dcdcaa", textTransform: "uppercase" }}>Inspector</h3>
             
             {!selectedComp ? (
-              <p style={{ fontSize: "12px", color: "#858585", fontStyle: "italic" }}>Select a component to edit.</p>
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                <strong style={{ fontSize: "12px", color: "#c586c0" }}>Window Properties</strong>
+                <div style={{ height: "1px", backgroundColor: "#3c3c3c" }} />
+
+                <span style={{ fontSize: "11px", color: "#858585" }}>Size (w × h)</span>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "5px" }}>
+                  <div>
+                    <span style={{ fontSize: "10px" }}>W:</span>
+                    <input type="number" value={schema.window?.width ?? 800}
+                      onChange={e => setSchemaWithHistory(prev => ({ ...prev, window: { ...prev.window, width: Math.max(400, parseInt(e.target.value)||400) } }))}
+                      style={{ width: "100%", background: "#3c3c3c", border: "1px solid #555", color: "white", padding: "3px" }} />
+                  </div>
+                  <div>
+                    <span style={{ fontSize: "10px" }}>H:</span>
+                    <input type="number" value={schema.window?.height ?? 600}
+                      onChange={e => setSchemaWithHistory(prev => ({ ...prev, window: { ...prev.window, height: Math.max(300, parseInt(e.target.value)||300) } }))}
+                      style={{ width: "100%", background: "#3c3c3c", border: "1px solid #555", color: "white", padding: "3px" }} />
+                  </div>
+                </div>
+
+                <span style={{ fontSize: "10px", color: "#ccc" }}>title:</span>
+                <input type="text" value={schema.window?.title ?? ""}
+                  onChange={e => setSchemaWithHistory(prev => ({ ...prev, window: { ...prev.window, title: e.target.value } }))}
+                  style={{ width: "100%", background: "#3c3c3c", border: "1px solid #555", color: "white", padding: "3px" }} />
+
+                <span style={{ fontSize: "11px", color: "#858585" }}>Min Size (w × h)</span>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "5px" }}>
+                  <div>
+                    <span style={{ fontSize: "10px" }}>W:</span>
+                    <input type="number" value={schema.window?.minWidth ?? 0}
+                      onChange={e => setSchemaWithHistory(prev => ({ ...prev, window: { ...prev.window, minWidth: parseInt(e.target.value)||0 } }))}
+                      style={{ width: "100%", background: "#3c3c3c", border: "1px solid #555", color: "white", padding: "3px" }} />
+                  </div>
+                  <div>
+                    <span style={{ fontSize: "10px" }}>H:</span>
+                    <input type="number" value={schema.window?.minHeight ?? 0}
+                      onChange={e => setSchemaWithHistory(prev => ({ ...prev, window: { ...prev.window, minHeight: parseInt(e.target.value)||0 } }))}
+                      style={{ width: "100%", background: "#3c3c3c", border: "1px solid #555", color: "white", padding: "3px" }} />
+                  </div>
+                </div>
+
+                <span style={{ fontSize: "11px", color: "#858585" }}>Resizable</span>
+                <div style={{ display: "flex", gap: "15px" }}>
+                  <label style={{ fontSize: "11px", color: "#ccc", display: "flex", alignItems: "center", gap: "4px" }}>
+                    <input type="checkbox" checked={schema.window?.resizableX ?? true}
+                      onChange={e => setSchemaWithHistory(prev => ({ ...prev, window: { ...prev.window, resizableX: e.target.checked } }))} />
+                    X
+                  </label>
+                  <label style={{ fontSize: "11px", color: "#ccc", display: "flex", alignItems: "center", gap: "4px" }}>
+                    <input type="checkbox" checked={schema.window?.resizableY ?? true}
+                      onChange={e => setSchemaWithHistory(prev => ({ ...prev, window: { ...prev.window, resizableY: e.target.checked } }))} />
+                    Y
+                  </label>
+                </div>
+
+                <span style={{ fontSize: "10px", color: "#ccc" }}>bg (background):</span>
+                <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
+                  <input type="color" value={schema.window?.bg || "#f0f0f0"}
+                    onChange={e => setSchemaWithHistory(prev => ({ ...prev, window: { ...prev.window, bg: e.target.value } }))}
+                    style={{ width: "40px", cursor: "pointer", padding: "0", border: "none", background: "transparent" }} />
+                  <input type="text" value={schema.window?.bg ?? ""}
+                    onChange={e => setSchemaWithHistory(prev => ({ ...prev, window: { ...prev.window, bg: e.target.value } }))}
+                    style={{ flex: 1, background: "#3c3c3c", border: "1px solid #555", color: "white", padding: "3px" }} />
+                </div>
+
+                <label style={{ fontSize: "11px", color: "#569cd6", display: "flex", alignItems: "center", gap: "6px" }}>
+                  <input type="checkbox" checked={schema.window?.overrideredirect ?? false}
+                    onChange={e => setSchemaWithHistory(prev => ({ ...prev, window: { ...prev.window, overrideredirect: e.target.checked } }))} />
+                  Override Redirect (no title bar)
+                </label>
+
+                <label style={{ fontSize: "11px", color: "#569cd6", display: "flex", alignItems: "center", gap: "6px" }}>
+                  <input type="checkbox" checked={schema.window?.showMenuBar ?? false}
+                    onChange={e => setSchemaWithHistory(prev => ({ ...prev, window: { ...prev.window, showMenuBar: e.target.checked } }))} />
+                  Show Menu Bar
+                </label>
+              </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
