@@ -20,14 +20,29 @@ const WIDGET_TYPES = [
   { type: 'Listbox', desc: "Lista testuale verticale a scorrimento", defaultProps: { bg: "white" }, defaultLayout: { width: 150, height: 100 } },
   { type: 'ttk.Labelframe', desc: "Contenitore visivo (Frame) adornato da bordo e titolo testuale", defaultProps: { text: "Group Title" }, defaultLayout: { width: 200, height: 150 } },
   { type: 'ttk.Separator', desc: "Linea divisoria tra layout visivi", defaultProps: { orient: "horizontal" }, defaultLayout: { width: 150, height: 5 } },
-  { type: 'ttk.PanedWindow', desc: "Layout split a due o più pannelli ridimensionabili", defaultProps: { orient: "vertical" }, defaultLayout: { width: 200, height: 200 } },
+  { type: 'ttk.PanedWindow', desc: "Layout split a due o più pannelli ridimensionabili", defaultProps: { orient: "horizontal", paneCount: 2, sashwidth: 4 }, defaultLayout: { width: 400, height: 300 } },
   { type: 'MapView', desc: "Mappa interattiva Google Maps embedded", defaultProps: { address: "Rome, Italy", zoom: 10 }, defaultLayout: { width: 300, height: 250 } },
   { type: 'MatplotlibChart', desc: "Area riservata a rendering di Grafici Scientifici via Matplotlib", defaultProps: { chartType: "line", title: "My Chart" }, defaultLayout: { width: 400, height: 300 } },
   { type: 'Canvas', desc: "Primitive Canvas libero di Tkinter per forme custom", defaultProps: { bg: "white" }, defaultLayout: { width: 200, height: 200 } }
 ];
 
 const THEMES = ["cosmo", "flatly", "journal", "lumen", "paper", "sandstone", "darkly", "cyborg", "superhero"];
-const INITIAL_SCHEMA = { theme: "darkly", pages: [{ name: "Tab 1", components: [] }] };
+const INITIAL_SCHEMA = {
+  theme: "darkly",
+  window: {
+    width: 800,
+    height: 600,
+    title: "My App",
+    minWidth: 0,
+    minHeight: 0,
+    resizableX: true,
+    resizableY: true,
+    bg: "",
+    overrideredirect: false,
+    showMenuBar: false
+  },
+  pages: [{ name: "Tab 1", components: [] }]
+};
 
 const GRID_SIZE = 20;
 const snapToGrid = (val, enabled) => enabled ? Math.round(val / GRID_SIZE) * GRID_SIZE : val;
@@ -36,7 +51,13 @@ function App() {
   const [schema, setSchema] = useState(() => {
     const saved = localStorage.getItem("radipy_project");
     if (saved) {
-      try { return JSON.parse(saved); } catch(e) {}
+      try {
+        const parsed = JSON.parse(saved);
+        if (!parsed.window) {
+          parsed.window = { ...INITIAL_SCHEMA.window };
+        }
+        return parsed;
+      } catch(e) {}
     }
     return INITIAL_SCHEMA;
   });
@@ -146,6 +167,14 @@ function App() {
         props: { ...data.widget.defaultProps },
         layout: { x, y, ...data.widget.defaultLayout }
       };
+
+      if (newComp.type === 'ttk.PanedWindow') {
+        const count = newComp.props.paneCount || 2;
+        newComp.panes = Array.from({ length: count }, (_, i) => ({
+          id: `${newComp.id}_pane_${i}`,
+          components: []
+        }));
+      }
 
       setSchemaWithHistory(prev => {
         const newPages = [...prev.pages];

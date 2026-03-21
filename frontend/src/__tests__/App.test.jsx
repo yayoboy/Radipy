@@ -100,4 +100,12 @@ describe('App Component - Basic', () => {
       expect(screen.getByTitle(/redo \(ctrl\+y\)/i)).toBeDisabled();
     });
   });
+
+  describe('Window Properties', () => {
+    test('window inspector shows when nothing selected', () => {
+      localStorage.clear();
+      render(<App />);
+      expect(screen.getByText(/window properties/i)).toBeInTheDocument();
+    });
+  });
 });
