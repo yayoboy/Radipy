@@ -158,16 +158,51 @@ function App() {
     const data = JSON.parse(dataStr);
     const canvasRect = canvasRef.current.getBoundingClientRect();
 
+    // Helper: find which PanedWindow pane the drop falls into
+    const findTargetPane = (dropX, dropY) => {
+      const comps = schema.pages[activePage]?.components || [];
+      for (const comp of comps) {
+        if (comp.type !== 'ttk.PanedWindow' || !comp.panes) continue;
+        const { x, y, width, height } = comp.layout;
+        if (dropX < x || dropX > x + width || dropY < y || dropY > y + height) continue;
+        // Inside this PanedWindow — find which pane
+        const isHorizontal = (comp.props?.orient || 'horizontal') === 'horizontal';
+        const paneCount = comp.panes.length;
+        const paneSize = isHorizontal ? width / paneCount : height / paneCount;
+        const offset = isHorizontal ? (dropX - x) : (dropY - y);
+        const paneIdx = Math.min(Math.floor(offset / paneSize), paneCount - 1);
+        const pane = comp.panes[paneIdx];
+        // Relative coordinates within pane
+        const relX = isHorizontal
+          ? Math.max(0, snapToGrid(dropX - x - paneIdx * paneSize, gridEnabled))
+          : Math.max(0, snapToGrid(dropX - x, gridEnabled));
+        const relY = isHorizontal
+          ? Math.max(0, snapToGrid(dropY - y, gridEnabled))
+          : Math.max(0, snapToGrid(dropY - y - paneIdx * paneSize, gridEnabled));
+        return { panedId: comp.id, paneId: pane.id, paneIdx, relX, relY };
+      }
+      return null;
+    };
+
     if (data.source === 'sidebar') {
       const x = Math.max(0, snapToGrid(Math.round(e.clientX - canvasRect.left), gridEnabled));
       const y = Math.max(0, snapToGrid(Math.round(e.clientY - canvasRect.top), gridEnabled));
+
+      const targetPane = findTargetPane(x, y);
+
       const newComp = {
         type: data.widget.type,
         id: generateId(data.widget.type.replace("ttk.", "").replace("MapView", "Map").replace("MatplotlibChart", "Chart")),
         props: { ...data.widget.defaultProps },
-        layout: { x, y, ...data.widget.defaultLayout }
+        layout: {
+          x: targetPane ? targetPane.relX : x,
+          y: targetPane ? targetPane.relY : y,
+          ...data.widget.defaultLayout
+        },
+        ...(targetPane ? { parentId: targetPane.paneId } : {})
       };
 
+      // Add PanedWindow panes if this is a PanedWindow being dropped
       if (newComp.type === 'ttk.PanedWindow') {
         const count = newComp.props.paneCount || 2;
         newComp.panes = Array.from({ length: count }, (_, i) => ({
@@ -178,7 +213,17 @@ function App() {
 
       setSchemaWithHistory(prev => {
         const newPages = [...prev.pages];
-        newPages[activePage].components.push(newComp);
+        if (targetPane) {
+          // Add to pane
+          const panedComp = newPages[activePage].components.find(c => c.id === targetPane.panedId);
+          if (panedComp) {
+            const pane = panedComp.panes.find(p => p.id === targetPane.paneId);
+            if (pane) pane.components.push(newComp);
+          }
+        } else {
+          // Add to page top-level
+          newPages[activePage].components.push(newComp);
+        }
         return { ...prev, pages: newPages };
       });
       setSelectedId(newComp.id);
@@ -434,7 +479,76 @@ setSchemaWithHistory(INITIAL_SCHEMA);
       case 'Listbox': return <div style={{width:"100%", height:"100%", background:"#fff", border:"1px solid #aaa", color:"#000", fontSize:"10px", padding:"5px"}}>Item 1<br/>Item 2</div>;
       case 'ttk.Labelframe': return <fieldset style={{width:"100%", height:"100%", border:"1px solid #aaa", boxSizing:"border-box", background:"transparent"}}><legend style={{color:"#dcdcaa", fontSize:"11px", padding:"0 5px"}}>{p.text}</legend></fieldset>;
       case 'ttk.Separator': return <hr style={{width:"100%", borderColor:"#555", margin:0}}/>;
-      case 'ttk.PanedWindow': return <div style={{width:"100%", height:"100%", border:"1px dashed #aaa", display:"flex"}}><div style={{flex:1, borderRight:"1px dashed #aaa"}}></div><div style={{flex:1}}></div></div>;
+      case 'ttk.PanedWindow': {
+        const orient = comp.props?.orient || 'horizontal';
+        const panes = comp.panes || [];
+        const paneCount = comp.props?.paneCount || 2;
+        const isHorizontal = orient === 'horizontal';
+
+        return (
+          <div style={{
+            width: "100%", height: "100%",
+            display: "flex",
+            flexDirection: isHorizontal ? "row" : "column",
+            background: "#252526",
+            border: "1px solid #4a4a4a",
+            overflow: "hidden",
+            position: "relative"
+          }}>
+            {Array.from({ length: paneCount }, (_, i) => {
+              const pane = panes[i] || { id: `pane_${i}`, components: [] };
+              return (
+                <React.Fragment key={i}>
+                  <div
+                    data-paneid={pane.id}
+                    style={{
+                      flex: 1,
+                      position: "relative",
+                      border: "1px dashed #555",
+                      minWidth: 0,
+                      minHeight: 0,
+                      overflow: "hidden"
+                    }}
+                  >
+                    {/* Pane label */}
+                    <span style={{
+                      position: "absolute", top: 2, left: 4,
+                      fontSize: "9px", color: "#555", pointerEvents: "none"
+                    }}>
+                      Pane {i}
+                    </span>
+                    {/* Render child components */}
+                    {pane.components && pane.components.map(child => (
+                      <div
+                        key={child.id}
+                        style={{
+                          position: "absolute",
+                          left: child.layout.x,
+                          top: child.layout.y,
+                          width: child.layout.width,
+                          height: child.layout.height,
+                          pointerEvents: "none"
+                        }}
+                      >
+                        {renderPreview(child)}
+                      </div>
+                    ))}
+                  </div>
+                  {/* Sash divider (not after last pane) */}
+                  {i < paneCount - 1 && (
+                    <div style={{
+                      [isHorizontal ? 'width' : 'height']: `${comp.props?.sashwidth || 4}px`,
+                      background: "#666",
+                      cursor: isHorizontal ? "col-resize" : "row-resize",
+                      flexShrink: 0
+                    }} />
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </div>
+        );
+      }
       case 'MapView': return <div style={{width:"100%", height:"100%", background:"#e5e3df", display:"flex", alignItems:"center", justifyContent:"center", color:"#555"}}>🗺️ {p.address}</div>;
       case 'MatplotlibChart': return <div style={{width:"100%", height:"100%", background:"#fff", display:"flex", alignItems:"center", justifyContent:"center", color:"#555"}}>📈 {p.title}</div>;
       case 'Icon': return <span className="material-icons" style={{fontSize: p.size || 24, color: p.color || "#ffffff", display:"flex", alignItems:"center", justifyContent:"center", width:"100%", height:"100%"}}>{p.iconName || "home"}</span>;
