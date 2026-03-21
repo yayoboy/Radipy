@@ -1,0 +1,65 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Tkinter UI Schema",
+  "type": "object",
+  "required": ["pages"],
+  "properties": {
+    "theme": {
+      "type": "string",
+      "description": "ttkbootstrap theme name (e.g. darkly, cosmo)"
+    },
+    "pages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "components"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the page or tab"
+          },
+          "components": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/Component"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "Component": {
+      "type": "object",
+      "required": ["type", "id", "props", "layout"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "Button", "Label", "Entry", "Text", "Frame", "Checkbutton", 
+            "Radiobutton", "Listbox", "Scrollbar", "Scale", "Spinbox", 
+            "Message", "Canvas", "Menu", "PanedWindow", 
+            "ttk.Progressbar", "ttk.Combobox", "ttk.Notebook", "ttk.Treeview", "ttk.Separator"
+          ]
+        },
+        "id": {
+          "type": "string"
+        },
+        "props": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "layout": {
+          "type": "object",
+          "required": ["x", "y"],
+          "properties": {
+            "x": { "type": "number" },
+            "y": { "type": "number" },
+            "width": { "type": "number" },
+            "height": { "type": "number" }
+          }
+        }
+      }
+    }
+  }
+}

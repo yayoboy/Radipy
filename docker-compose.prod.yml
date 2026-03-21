@@ -1,0 +1,25 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    ports:
+      - "8000:8000"
+    restart: always
+    environment:
+      - PORT=8000
+      - CORS_ORIGINS=http://localhost,http://localhost:80
+    # No volume mount per il codice in dev, la build è congelata nell'immagine
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+    ports:
+      - "80:80" # Nginx esposto direttamente sulla porta 80
+    restart: always
+    depends_on:
+      - backend
+    # VITE_API_URL non serve più perché Nginx (porta 80) fa da proxy a /generate
