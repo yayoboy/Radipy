@@ -12,6 +12,7 @@ def generate_tkinter_code(project_json):
 
     theme = project_json.get("theme")
     if theme:
+        lines.append("import tkinter as tk")
         lines.append("import ttkbootstrap as ttk")
         lines.append("from ttkbootstrap.constants import *")
         lines.append("from ttkbootstrap.widgets import DateEntry, Meter")
@@ -57,18 +58,20 @@ def generate_tkinter_code(project_json):
     w_override = win.get("overrideredirect", False)
     w_menubar = win.get("showMenuBar", False)
 
-    lines.append(f"        self.title('{w_title}')")
+    w_title_escaped = w_title.replace("'", "\\'")
+    w_bg_escaped = w_bg.replace("'", "\\'") if w_bg else w_bg
+    lines.append(f"        self.title('{w_title_escaped}')")
     lines.append(f"        self.geometry('{w_width}x{w_height}')")
     if w_minw or w_minh:
         lines.append(f"        self.minsize({w_minw}, {w_minh})")
     lines.append(f"        self.resizable({w_resx}, {w_resy})")
     if w_bg:
-        lines.append(f"        self.configure(bg='{w_bg}')")
+        lines.append(f"        self.configure(bg='{w_bg_escaped}')")
     if w_override:
-        lines.append(f"        self.overrideredirect(True)")
+        lines.append("        self.overrideredirect(True)")
     if w_menubar:
-        lines.append(f"        menubar = tk.Menu(self)")
-        lines.append(f"        self.config(menu=menubar)")
+        lines.append("        menubar = tk.Menu(self)")
+        lines.append("        self.config(menu=menubar)")
     lines.append("        self.setup_ui()")
     lines.append("")
     lines.append("    def setup_ui(self):")

@@ -279,3 +279,30 @@ def test_window_defaults_when_missing():
     code = generate_tkinter_code(project)
     assert "self.geometry('800x600')" in code
     assert "self.title('Radipy Generated UI')" in code
+
+
+def test_window_title_with_apostrophe():
+    project = {
+        "window": {"width": 800, "height": 600, "title": "It's Ready",
+                   "minWidth": 0, "minHeight": 0,
+                   "resizableX": True, "resizableY": True,
+                   "bg": "", "overrideredirect": False, "showMenuBar": False},
+        "theme": "",
+        "pages": [{"name": "Main", "components": []}]
+    }
+    code = generate_tkinter_code(project)
+    assert "self.title('It\\'s Ready')" in code
+
+
+def test_window_menubar_with_theme():
+    project = {
+        "window": {"width": 800, "height": 600, "title": "App",
+                   "minWidth": 0, "minHeight": 0,
+                   "resizableX": True, "resizableY": True,
+                   "bg": "", "overrideredirect": False, "showMenuBar": True},
+        "theme": "darkly",
+        "pages": [{"name": "Main", "components": []}]
+    }
+    code = generate_tkinter_code(project)
+    assert "import tkinter as tk" in code
+    assert "menubar = tk.Menu(self)" in code
