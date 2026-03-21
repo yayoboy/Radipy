@@ -287,12 +287,18 @@ updateComponentLayout(data.id, { x, y });
       finalWidth = snapToGrid(Math.max(20, startWidth + (dragEvent.clientX - startX)), gridEnabled);
       finalHeight = snapToGrid(Math.max(20, startHeight + (dragEvent.clientY - startY)), gridEnabled);
       // Use direct setSchema for live feedback (no history entry)
-      setSchema(prev => {
-        const newPages = [...prev.pages];
-        const c = newPages[activePage].components.find(comp => comp.id === id);
-        if (c) c.layout = { ...c.layout, width: finalWidth, height: finalHeight };
-        return { ...prev, pages: newPages };
-      });
+      setSchema(prev => ({
+        ...prev,
+        pages: prev.pages.map((page, pi) => {
+          if (pi !== activePage) return page;
+          return {
+            ...page,
+            components: page.components.map(c =>
+              c.id !== id ? c : { ...c, layout: { ...c.layout, width: finalWidth, height: finalHeight } }
+            )
+          };
+        })
+      }));
     };
 
     const stopDrag = () => {
@@ -372,12 +378,29 @@ const updateComponentProps = (id, key, value) => {
       ...prev,
       pages: prev.pages.map((page, pi) => {
         if (pi !== activePage) return page;
-        return {
-          ...page,
-          components: page.components.map(c =>
-            c.id !== id ? c : { ...c, layout: { ...c.layout, ...updates } }
-          )
-        };
+        // Try top-level first
+        let found = false;
+        const newComponents = page.components.map(c => {
+          if (c.id === id) { found = true; return { ...c, layout: { ...c.layout, ...updates } }; }
+          // Try inside pane children
+          if (c.panes) {
+            const newPanes = c.panes.map(pane => {
+              const paneFound = pane.components.some(ch => ch.id === id);
+              if (!paneFound) return pane;
+              found = true;
+              return {
+                ...pane,
+                components: pane.components.map(ch =>
+                  ch.id !== id ? ch : { ...ch, layout: { ...ch.layout, ...updates } }
+                )
+              };
+            });
+            if (newPanes !== c.panes) return { ...c, panes: newPanes };
+          }
+          return c;
+        });
+        if (!found) return page;
+        return { ...page, components: newComponents };
       })
     }));
   };
@@ -915,9 +938,10 @@ setSchemaWithHistory(INITIAL_SCHEMA);
                 <input 
                   value={page.name} 
                   onChange={e => {
-                    const newPages = [...schema.pages];
-                    newPages[idx].name = e.target.value;
-                    setSchemaWithHistory({...schema, pages: newPages});
+                    setSchemaWithHistory(prev => ({
+                      ...prev,
+                      pages: prev.pages.map((p, i) => i !== idx ? p : { ...p, name: e.target.value })
+                    }));
                   }}
                   style={{ background: "transparent", border: "none", color: "inherit", width: "70px", fontSize: "13px", outline: "none" }}
                 />
