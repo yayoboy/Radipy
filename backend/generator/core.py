@@ -45,8 +45,30 @@ def generate_tkinter_code(project_json):
     else:
         lines.append("        super().__init__()")
 
-    lines.append("        self.title('Radipy Generated UI')")
-    lines.append("        self.geometry('800x600')")
+    win = project_json.get("window", {})
+    w_width = win.get("width", 800)
+    w_height = win.get("height", 600)
+    w_title = win.get("title", "Radipy Generated UI")
+    w_minw = win.get("minWidth", 0)
+    w_minh = win.get("minHeight", 0)
+    w_resx = win.get("resizableX", True)
+    w_resy = win.get("resizableY", True)
+    w_bg = win.get("bg", "")
+    w_override = win.get("overrideredirect", False)
+    w_menubar = win.get("showMenuBar", False)
+
+    lines.append(f"        self.title('{w_title}')")
+    lines.append(f"        self.geometry('{w_width}x{w_height}')")
+    if w_minw or w_minh:
+        lines.append(f"        self.minsize({w_minw}, {w_minh})")
+    lines.append(f"        self.resizable({w_resx}, {w_resy})")
+    if w_bg:
+        lines.append(f"        self.configure(bg='{w_bg}')")
+    if w_override:
+        lines.append(f"        self.overrideredirect(True)")
+    if w_menubar:
+        lines.append(f"        menubar = tk.Menu(self)")
+        lines.append(f"        self.config(menu=menubar)")
     lines.append("        self.setup_ui()")
     lines.append("")
     lines.append("    def setup_ui(self):")

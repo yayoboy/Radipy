@@ -223,7 +223,59 @@ class TestExternalDependencies:
             }]
         }
         code = generate_tkinter_code(project)
-        
+
         assert "import matplotlib.pyplot as plt" in code
         assert "from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg" in code
         assert "plt.subplots" in code
+
+
+def test_window_props_title_and_geometry():
+    project = {
+        "window": {"width": 1024, "height": 768, "title": "Test App",
+                   "minWidth": 200, "minHeight": 150,
+                   "resizableX": False, "resizableY": True,
+                   "bg": "#ff0000", "overrideredirect": False, "showMenuBar": False},
+        "theme": "",
+        "pages": [{"name": "Main", "components": []}]
+    }
+    code = generate_tkinter_code(project)
+    assert "self.geometry('1024x768')" in code
+    assert "self.title('Test App')" in code
+    assert "self.minsize(200, 150)" in code
+    assert "self.resizable(False, True)" in code
+    assert "self.configure(bg='#ff0000')" in code
+
+def test_window_overrideredirect():
+    project = {
+        "window": {"width": 800, "height": 600, "title": "App",
+                   "minWidth": 0, "minHeight": 0,
+                   "resizableX": True, "resizableY": True,
+                   "bg": "", "overrideredirect": True, "showMenuBar": False},
+        "theme": "",
+        "pages": [{"name": "Main", "components": []}]
+    }
+    code = generate_tkinter_code(project)
+    assert "self.overrideredirect(True)" in code
+
+def test_window_show_menubar():
+    project = {
+        "window": {"width": 800, "height": 600, "title": "App",
+                   "minWidth": 0, "minHeight": 0,
+                   "resizableX": True, "resizableY": True,
+                   "bg": "", "overrideredirect": False, "showMenuBar": True},
+        "theme": "",
+        "pages": [{"name": "Main", "components": []}]
+    }
+    code = generate_tkinter_code(project)
+    assert "menubar = tk.Menu(self)" in code
+    assert "self.config(menu=menubar)" in code
+
+def test_window_defaults_when_missing():
+    """Old schemas without window object still generate valid code."""
+    project = {
+        "theme": "",
+        "pages": [{"name": "Main", "components": []}]
+    }
+    code = generate_tkinter_code(project)
+    assert "self.geometry('800x600')" in code
+    assert "self.title('Radipy Generated UI')" in code
