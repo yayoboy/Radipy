@@ -129,4 +129,13 @@ describe('App Component - Basic', () => {
       expect(document.querySelector('[data-testid="canvas-resize-handle"]')).toBeInTheDocument();
     });
   });
+
+  describe('Layers Panel', () => {
+    test('layers tab renders DOCUMENT TREE heading', () => {
+      render(<App />);
+      const layersBtn = screen.getByRole('button', { name: /Layers/i });
+      fireEvent.click(layersBtn);
+      expect(screen.getByText(/DOCUMENT TREE/i)).toBeInTheDocument();
+    });
+  });
 });

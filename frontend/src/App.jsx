@@ -1067,26 +1067,58 @@ setSchemaWithHistory(INITIAL_SCHEMA);
                 </div>
               ))
             ) : (
-              // Layer Tree
+              // Layer Tree — hierarchical
               <div>
                 <span style={{ fontSize: "11px", color: "#858585" }}>DOCUMENT TREE</span>
-                <div style={{ marginLeft: "10px", marginTop: "10px", display: "flex", flexDirection: "column", gap: "5px" }}>
-                  {schema.pages.map((p, idx) => (
-                    <div key={idx}>
-                      <div style={{ color: "#dcdcaa", fontSize: "12px", marginBottom: "5px" }}>📄 {p.name}</div>
-                      <div style={{ marginLeft: "15px", display: "flex", flexDirection: "column", gap: "5px" }}>
-                        {p.components.map(c => (
-                          <div 
-                            key={c.id} 
-                            onClick={()=> { setActivePage(idx); setSelectedId(c.id); }}
-                            style={{ fontSize: "11px", color: selectedId === c.id ? "#61dafb" : "#ce9178", cursor: "pointer", padding: "2px", backgroundColor: selectedId === c.id ? "#3c3c3c" : "transparent" }}
+                <div style={{ marginTop: "10px", display: "flex", flexDirection: "column", gap: "3px" }}>
+                  {schema.pages.map((p, pageIdx) => {
+                    const renderLayerNode = (comp, depth) => {
+                      const isSelected = selectedId === comp.id;
+                      return (
+                        <div key={comp.id}>
+                          <div
+                            onClick={() => { setActivePage(pageIdx); setSelectedId(comp.id); }}
+                            style={{
+                              fontSize: "11px",
+                              color: isSelected ? "#61dafb" : "#ce9178",
+                              cursor: "pointer",
+                              padding: "2px 4px",
+                              paddingLeft: `${depth * 12 + 4}px`,
+                              backgroundColor: isSelected ? "#3c3c3c" : "transparent",
+                              borderRadius: "3px"
+                            }}
                           >
-                            ↳ {c.id} ({c.type})
+                            ↳ {comp.id} <span style={{ color: "#858585" }}>({comp.type})</span>
                           </div>
-                        ))}
+                          {comp.tabs && comp.tabs.map((tab) => (
+                            <div key={tab.id}>
+                              <div style={{ fontSize: "10px", color: "#6a9955", padding: "1px 4px", paddingLeft: `${depth * 12 + 16}px` }}>
+                                [{tab.label}]
+                              </div>
+                              {(tab.components || []).map(child => renderLayerNode(child, depth + 2))}
+                            </div>
+                          ))}
+                          {comp.panes && comp.panes.map((pane, pi) => (
+                            <div key={pane.id}>
+                              <div style={{ fontSize: "10px", color: "#6a9955", padding: "1px 4px", paddingLeft: `${depth * 12 + 16}px` }}>
+                                [Pane {pi + 1}]
+                              </div>
+                              {(pane.components || []).map(child => renderLayerNode(child, depth + 2))}
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    };
+
+                    return (
+                      <div key={pageIdx}>
+                        <div style={{ color: "#dcdcaa", fontSize: "12px", marginBottom: "5px", marginTop: pageIdx > 0 ? "10px" : "0" }}>
+                          📄 {p.name}
+                        </div>
+                        {p.components.map(c => renderLayerNode(c, 0))}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
