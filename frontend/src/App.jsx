@@ -1337,6 +1337,57 @@ setSchemaWithHistory(INITIAL_SCHEMA);
                       </div>
                     );
                   }
+                  if (selectedComp.type === 'ttk.Notebook' && key === 'tabCount') {
+                    return (
+                      <div key={key} style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                        <span style={{ fontSize: "10px", color: "#ccc" }}>tabCount:</span>
+                        <select
+                          value={selectedComp.props.tabCount || 2}
+                          onChange={e => {
+                            const newCount = parseInt(e.target.value);
+                            setSchemaWithHistory(prev => ({
+                              ...prev,
+                              pages: prev.pages.map((page, pi) => {
+                                if (pi !== activePage) return page;
+                                return {
+                                  ...page,
+                                  components: page.components.map(c => {
+                                    if (c.id !== selectedId) return c;
+                                    const existingTabs = c.tabs || [];
+                                    return {
+                                      ...c,
+                                      props: { ...c.props, tabCount: newCount },
+                                      tabs: Array.from({ length: newCount }, (_, i) =>
+                                        existingTabs[i] || { id: `${c.id}_tab_${i}`, label: `Tab ${i + 1}`, components: [] }
+                                      )
+                                    };
+                                  })
+                                };
+                              })
+                            }));
+                          }}
+                          style={{ background: "#3c3c3c", border: "1px solid #555", color: "white", padding: "3px" }}
+                        >
+                          <option value={2}>2</option>
+                          <option value={3}>3</option>
+                          <option value={4}>4</option>
+                        </select>
+                      </div>
+                    );
+                  }
+                  if (selectedComp.type === 'ttk.Notebook' && key === 'tabHeight') {
+                    return (
+                      <div key={key} style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                        <span style={{ fontSize: "10px", color: "#ccc" }}>tabHeight:</span>
+                        <input
+                          type="number"
+                          value={selectedComp.props.tabHeight || 28}
+                          onChange={e => updateComponentProps(selectedComp.id, 'tabHeight', Math.max(18, parseInt(e.target.value)||28))}
+                          style={{ width: "100%", background: "#3c3c3c", border: "1px solid #555", color: "white", padding: "3px" }}
+                        />
+                      </div>
+                    );
+                  }
                   const isColor = ["bg", "fg", "color"].includes(key);
                   return (
                     <div key={key} style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
@@ -1356,6 +1407,43 @@ setSchemaWithHistory(INITIAL_SCHEMA);
                     </div>
                   );
                 })}
+                {selectedComp.type === 'ttk.Notebook' && selectedComp.tabs && (
+                  <>
+                    <div style={{ height: "1px", backgroundColor: "#3c3c3c", margin: "5px 0" }} />
+                    <span style={{ fontSize: "11px", color: "#858585" }}>Tab Labels</span>
+                    {selectedComp.tabs.map((tab, i) => (
+                      <div key={tab.id} style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                        <span style={{ fontSize: "10px", color: "#ccc" }}>Tab {i + 1}:</span>
+                        <input
+                          type="text"
+                          value={tab.label}
+                          onChange={e => {
+                            const newLabel = e.target.value;
+                            setSchemaWithHistory(prev => ({
+                              ...prev,
+                              pages: prev.pages.map((page, pi) => {
+                                if (pi !== activePage) return page;
+                                return {
+                                  ...page,
+                                  components: page.components.map(c => {
+                                    if (c.id !== selectedId) return c;
+                                    return {
+                                      ...c,
+                                      tabs: c.tabs.map((t, ti) =>
+                                        ti !== i ? t : { ...t, label: newLabel }
+                                      )
+                                    };
+                                  })
+                                };
+                              })
+                            }));
+                          }}
+                          style={{ width: "100%", background: "#3c3c3c", border: "1px solid #555", color: "white", padding: "3px" }}
+                        />
+                      </div>
+                    ))}
+                  </>
+                )}
               </div>
             )}
           </div>
