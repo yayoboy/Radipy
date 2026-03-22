@@ -614,13 +614,13 @@ setSchemaWithHistory(INITIAL_SCHEMA);
       if (c.id === id) return c;
       if (c.tabs) {
         for (const tab of c.tabs) {
-          const found = findComponentById(id, tab.components);
+          const found = findComponentById(id, tab.components || []);
           if (found) return found;
         }
       }
       if (c.panes) {
         for (const pane of c.panes) {
-          const found = findComponentById(id, pane.components);
+          const found = findComponentById(id, pane.components || []);
           if (found) return found;
         }
       }
