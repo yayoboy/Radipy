@@ -625,7 +625,8 @@ setSchemaWithHistory(INITIAL_SCHEMA);
       case 'ttk.Notebook': {
         const tabs = comp.tabs || [];
         const tabHeight = comp.props?.tabHeight || 28;
-        const activeTabIdx = activeNotebookTab[comp.id] ?? 0;
+        const rawIdx = activeNotebookTab[comp.id] ?? 0;
+        const activeTabIdx = tabs.length > 0 ? Math.min(rawIdx, tabs.length - 1) : 0;
         const tabCount = (tabs.length > 0) ? tabs.length : (comp.props?.tabCount || 2);
 
         return (
@@ -671,7 +672,7 @@ setSchemaWithHistory(INITIAL_SCHEMA);
                 position: "absolute", top: 2, left: 4,
                 fontSize: "9px", color: "#555", pointerEvents: "none"
               }}>
-                Tab {activeTabIdx}
+                Tab {activeTabIdx + 1}
               </span>
               {tabs[activeTabIdx]?.components?.map(child => (
                 <div key={child.id} style={{
@@ -1044,7 +1045,7 @@ setSchemaWithHistory(INITIAL_SCHEMA);
               e.stopPropagation();
               setSelectedId(comp.id);
               // For Notebook: detect which tab was clicked in the tab bar
-              if (comp.type === 'ttk.Notebook' && comp.tabs) {
+              if (comp.type === 'ttk.Notebook' && comp.tabs?.length > 0) {
                 const rect = e.currentTarget.getBoundingClientRect();
                 const relY = e.clientY - rect.top;
                 const tabHeight = comp.props?.tabHeight || 28;
