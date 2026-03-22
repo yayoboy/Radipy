@@ -118,6 +118,7 @@ function App() {
   const [isResizing, setIsResizing] = useState(false);
   const [gridEnabled, setGridEnabled] = useState(true);
   const [activeNotebookTab, setActiveNotebookTab] = useState({}); // { [notebookId]: tabIdx }
+  const [tabScrollOffset, setTabScrollOffset] = useState({}); // { [notebookId]: number }
   const [sizeDraft, setSizeDraft] = useState({ w: null, h: null });
   const [multiValDraft, setMultiValDraft] = useState(""); // pending input for new multi-value item
   const [iconPickerOpen, setIconPickerOpen] = useState(false);
@@ -795,35 +796,47 @@ setSchemaWithHistory(INITIAL_SCHEMA);
             display: "flex", flexDirection: "column",
             overflow: "hidden"
           }}>
-            {/* Tab bar */}
-            <div style={{
-              display: "flex",
-              height: `${tabHeight}px`,
-              borderBottom: "1px solid #555",
-              flexShrink: 0,
-              overflow: "hidden"
-            }}>
-              {Array.from({ length: tabCount }, (_, i) => {
-                const tab = tabs[i] || { label: `Tab ${i + 1}` };
-                const isActive = i === activeTabIdx;
-                return (
-                  <div key={i} style={{
-                    padding: "0 12px",
-                    display: "flex",
-                    alignItems: "center",
-                    fontSize: "11px",
-                    color: isActive ? "#ffffff" : "#888",
-                    background: isActive ? "#3c3c3c" : "transparent",
-                    borderRight: "1px solid #555",
-                    borderBottom: isActive ? "2px solid #569cd6" : "none",
-                    whiteSpace: "nowrap",
-                    flexShrink: 0
-                  }}>
-                    {tab.label || `Tab ${i + 1}`}
-                  </div>
-                );
-              })}
-            </div>
+            {/* Tab bar with scroll arrows */}
+            {(() => {
+              const AVG_TAB_W = 80;
+              const visibleCount = Math.max(1, Math.floor((comp.layout.width - (tabCount > 3 ? 40 : 0)) / AVG_TAB_W));
+              const scrollOffset = Math.min(tabScrollOffset[comp.id] ?? 0, Math.max(0, tabCount - visibleCount));
+              const canScrollLeft = scrollOffset > 0;
+              const canScrollRight = scrollOffset + visibleCount < tabCount;
+              return (
+                <div style={{ display: "flex", height: `${tabHeight}px`, borderBottom: "1px solid #555", flexShrink: 0, overflow: "hidden", alignItems: "stretch" }}>
+                  {canScrollLeft && (
+                    <button
+                      onClick={e => { e.stopPropagation(); setTabScrollOffset(prev => ({ ...prev, [comp.id]: Math.max(0, scrollOffset - 1) })); }}
+                      style={{ background: "#3c3c3c", border: "none", color: "#aaa", cursor: "pointer", padding: "0 4px", flexShrink: 0, fontSize: "12px" }}
+                    >◀</button>
+                  )}
+                  {Array.from({ length: tabCount }, (_, i) => {
+                    if (i < scrollOffset || i >= scrollOffset + visibleCount) return null;
+                    const tab = tabs[i] || { label: `Tab ${i + 1}` };
+                    const isActive = i === activeTabIdx;
+                    return (
+                      <div key={i} style={{
+                        padding: "0 12px", display: "flex", alignItems: "center",
+                        fontSize: "11px", color: isActive ? "#ffffff" : "#888",
+                        background: isActive ? "#3c3c3c" : "transparent",
+                        borderRight: "1px solid #555",
+                        borderBottom: isActive ? "2px solid #569cd6" : "none",
+                        whiteSpace: "nowrap", flexShrink: 0
+                      }}>
+                        {tab.label || `Tab ${i + 1}`}
+                      </div>
+                    );
+                  })}
+                  {canScrollRight && (
+                    <button
+                      onClick={e => { e.stopPropagation(); setTabScrollOffset(prev => ({ ...prev, [comp.id]: scrollOffset + 1 })); }}
+                      style={{ background: "#3c3c3c", border: "none", color: "#aaa", cursor: "pointer", padding: "0 4px", flexShrink: 0, fontSize: "12px", marginLeft: "auto" }}
+                    >▶</button>
+                  )}
+                </div>
+              );
+            })()}
             {/* Content area */}
             <div style={{ flex: 1, position: "relative", overflow: "hidden" }}>
               <span style={{
