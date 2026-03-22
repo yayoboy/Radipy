@@ -28,6 +28,46 @@ const WIDGET_TYPES = [
 ];
 
 const THEMES = ["cosmo", "flatly", "journal", "lumen", "paper", "sandstone", "darkly", "cyborg", "superhero"];
+
+const MATERIAL_ICONS = [
+  "home","arrow_back","arrow_forward","arrow_upward","arrow_downward","menu","close",
+  "fullscreen","fullscreen_exit","more_vert","more_horiz","refresh","search","apps",
+  "keyboard_arrow_up","keyboard_arrow_down","keyboard_arrow_left","keyboard_arrow_right",
+  "unfold_more","unfold_less","add","add_circle","remove","remove_circle","check",
+  "check_circle","cancel","edit","delete","delete_forever","save","content_copy",
+  "content_cut","content_paste","undo","redo","share","send","mail","reply","reply_all",
+  "forward","print","download","upload","cloud_upload","cloud_download","warning",
+  "warning_amber","error","error_outline","help","help_outline","notification_important",
+  "notifications","notifications_active","notifications_off","phone","phone_android",
+  "email","chat","chat_bubble","forum","comment","feedback","message","link","link_off",
+  "attachment","file_copy","folder","folder_open","create_new_folder","description",
+  "article","note","event_note","list","view_list","view_module","grid_view","smartphone",
+  "tablet","laptop","computer","tv","watch","camera","camera_alt","photo_camera",
+  "videocam","mic","volume_up","volume_down","volume_off","wifi","wifi_off","battery_full",
+  "battery_std","battery_alert","format_bold","format_italic","format_underlined",
+  "format_strikethrough","format_align_center","format_align_justify",
+  "format_list_bulleted","format_list_numbered","format_indent_increase",
+  "format_indent_decrease","text_fields","save_as","upload_file","drive_file_move",
+  "mouse","keyboard","keyboard_hide","headset","speaker","lock","lock_open","key",
+  "vpn_key","shopping_cart","shopping_bag","credit_card","payments","account_balance",
+  "account_balance_wallet","savings","monetization_on","sell","local_offer","card_giftcard",
+  "settings","build","engineering","admin_panel_settings","manage_accounts","dashboard",
+  "speed","analytics","bar_chart","show_chart","timeline","pie_chart","insights",
+  "trending_up","trending_down","verified","verified_user","shield","security",
+  "fingerprint","face","badge","star","star_border","favorite","favorite_border",
+  "thumb_up","thumb_up_alt","thumb_down","thumb_down_alt","visibility","visibility_off",
+  "person","person_add","group","groups","location_on","map","navigation","near_me",
+  "place","my_location","calendar_today","event","schedule","timer","alarm","update",
+  "history","flag","tour","info","info_outline","lightbulb","lightbulb_outline",
+  "extension","widgets","tune","filter_list","sort","swap_vert","swap_horiz",
+  "zoom_in","zoom_out","crop","rotate_left","rotate_right","flip","palette","brush",
+  "color_lens","image","broken_image","wb_sunny","wb_cloudy","thunderstorm","water_drop",
+  "ac_unit","pool","spa","fitness_center","restaurant","local_cafe","hotel","flight",
+  "directions_car","train","directions_bike","sync","sync_disabled","sync_problem",
+  "cloud","cloud_done","cloud_off","backup","store","storefront","work",
+  "toggle_on","toggle_off","traffic","switch_camera","switch_video"
+];
+
 const INITIAL_SCHEMA = {
   theme: "darkly",
   window: {
@@ -80,6 +120,8 @@ function App() {
   const [activeNotebookTab, setActiveNotebookTab] = useState({}); // { [notebookId]: tabIdx }
   const [sizeDraft, setSizeDraft] = useState({ w: null, h: null });
   const [multiValDraft, setMultiValDraft] = useState(""); // pending input for new multi-value item
+  const [iconPickerOpen, setIconPickerOpen] = useState(false);
+  const [iconSearch, setIconSearch] = useState("");
   const [dragPreview, setDragPreview] = useState(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
@@ -818,172 +860,6 @@ setSchemaWithHistory(INITIAL_SCHEMA);
   return (
     <div style={{ fontFamily: "'Inter', sans-serif", display: "flex", flexDirection: "column", height: "100vh", backgroundColor: "#1e1e1e", color: "#e0e0e0" }}>
       
-{/* GLOBAL DATALIST FOR ICONS - All Material Design Icons */}
-<datalist id="material-icons-list">
-{/* Navigation */}
-<option value="home" /><option value="arrow_back" /><option value="arrow_forward" />
-<option value="arrow_upward" /><option value="arrow_downward" /><option value="menu" />
-<option value="close" /><option value="fullscreen" /><option value="fullscreen_exit" />
-<option value="more_vert" /><option value="more_horiz" /><option value="refresh" />
-<option value="search" /><option value="apps" /><option value="keyboard_arrow_up" />
-<option value="keyboard_arrow_down" /><option value="keyboard_arrow_left" />
-<option value="keyboard_arrow_right" /><option value="unfold_more" /><option value="unfold_less" />
-
-{/* Action */}
-<option value="add" /><option value="add_circle" /><option value="remove" />
-<option value="remove_circle" /><option value="check" /><option value="check_circle" />
-<option value="cancel" /><option value="edit" /><option value="delete" />
-<option value="delete_forever" /><option value="save" /><option value="content_copy" />
-<option value="content_cut" /><option value="content_paste" /><option value="undo" />
-<option value="redo" /><option value="share" /><option value="send" />
-<option value="mail" /><option value="reply" /><option value="reply_all" />
-<option value="forward" /><option value="print" /><option value="download" />
-<option value="upload" /><option value="cloud_upload" /><option value="cloud_download" />
-
-{/* Alert */}
-<option value="info" /><option value="info_outline" /><option value="warning" />
-<option value="warning_amber" /><option value="error" /><option value="error_outline" />
-<option value="help" /><option value="help_outline" /><option value="notification_important" />
-<option value="notifications" /><option value="notifications_active" /><option value="notifications_off" />
-
-{/* Communication */}
-<option value="phone" /><option value="phone_android" /><option value="email" />
-<option value="chat" /><option value="chat_bubble" /><option value="forum" />
-<option value="comment" /><option value="feedback" /><option value="message" />
-
-{/* Content */}
-<option value="link" /><option value="link_off" /><option value="attachment" />
-<option value="file_copy" /><option value="folder" /><option value="folder_open" />
-<option value="create_new_folder" /><option value="description" /><option value="article" />
-<option value="note" /><option value="event_note" /><option value="list" />
-<option value="view_list" /><option value="view_module" /><option value="grid_view" />
-
-{/* Device */}
-<option value="smartphone" /><option value="tablet" /><option value="laptop" />
-<option value="computer" /><option value="tv" /><option value="watch" />
-<option value="camera" /><option value="camera_alt" /><option value="photo_camera" />
-<option value="videocam" /><option value="mic" /><option value="volume_up" />
-<option value="volume_down" /><option value="volume_off" /><option value="brightness_high" />
-<option value="brightness_low" /><option value="wifi" /><option value="wifi_off" />
-<option value="battery_full" /><option value="battery_std" /><option value="battery_alert" />
-
-{/* Editor */}
-<option value="format_bold" /><option value="format_italic" /><option value="format_underlined" />
-<option value="format_strikethrough" /><option value="format_align_left" />
-<option value="format_align_center" /><option value="format_align_right" />
-<option value="format_align_justify" /><option value="format_list_bulleted" />
-<option value="format_list_numbered" /><option value="format_indent_increase" />
-<option value="format_indent_decrease" /><option value="text_fields" />
-
-{/* File */}
-<option value="save" /><option value="save_as" /><option value="folder_open" />
-<option value="upload_file" /><option value="download" /><option value="drive_file_move" />
-
-{/* Hardware */}
-<option value="mouse" /><option value="keyboard" /><option value="keyboard_hide" />
-<option value="headset" /><option value="speaker" /><option value="print" />
-<option value="router" /><option value="memory" /><option value="sd_storage" />
-
-{/* Image */}
-<option value="image" /><option value="photo" /><option value="photo_library" />
-<option value="add_photo_alternate" /><option value="collections" /><option value="slideshow" />
-<option value="crop" /><option value="crop_free" /><option value="rotate_right" />
-<option value="rotate_left" /><option value="flip" /><option value="tune" />
-<option value="filter" /><option value="color_lens" /><option value="palette" />
-
-{/* Maps */}
-<option value="map" /><option value="place" /><option value="directions" />
-<option value="directions_car" /><option value="directions_walk" /><option value="directions_bike" />
-<option value="directions_boat" /><option value="directions_bus" /><option value="directions_railway" />
-<option value="flight" /><option value="local_airport" /><option value="local_taxi" />
-<option value="local_shipping" /><option value="local_gas_station" /><option value="traffic" />
-<option value="navigation" /><option value="near_me" /><option value="my_location" />
-<option value="location_on" /><option value="location_off" /><option value="explore" />
-
-{/* Navigation */}
-<option value="apps" /><option value="arrow_back" /><option value="arrow_back_ios" />
-<option value="arrow_forward" /><option value="arrow_forward_ios" /><option value="arrow_upward" />
-<option value="arrow_downward" /><option value="expand_less" /><option value="expand_more" />
-<option value="chevron_left" /><option value="chevron_right" /><option value="first_page" />
-<option value="last_page" /><option value="home" /><option value="menu" />
-<option value="close" /><option value="more_vert" /><option value="more_horiz" />
-
-{/* Social */}
-<option value="person" /><option value="people" /><option value="group" />
-<option value="group_add" /><option value="person_add" /><option value="person_remove" />
-<option value="contacts" /><option value="favorite" /><option value="favorite_border" />
-<option value="star" /><option value="star_border" /><option value="star_half" />
-<option value="thumb_up" /><option value="thumb_down" /><option value="thumb_up_alt" />
-<option value="thumb_down_alt" /><option value="share" /><option value="ios_share" />
-
-{/* Toggle */}
-<option value="toggle_on" /><option value="toggle_off" /><option value="check_box" />
-<option value="check_box_outline_blank" /><option value="indeterminate_check_box" />
-<option value="radio_button_checked" /><option value="radio_button_unchecked" />
-<option value="switch_camera" /><option value="switch_video" />
-
-{/* Objects */}
-<option value="phone" /><option value="watch" /><option value="lightbulb" />
-<option value="lock" /><option value="lock_open" /><option value="lock_clock" />
-<option value="key" /><option value="vpn_key" /><option value="shopping_cart" />
-<option value="shopping_bag" /><option value="local_mall" /><option value="credit_card" />
-<option value="payments" /><option value="account_balance" /><option value="account_balance_wallet" />
-<option value="savings" /><option value="monetization_on" /><option value="sell" />
-<option value="local_offer" /><option value="confirmation_number" /><option value="card_giftcard" />
-
-{/* Action Icons */}
-<option value="settings" /><option value="settings_applications" /><option value="build" />
-<option value="engineering" /><option value="admin_panel_settings" /><option value="manage_accounts" />
-<option value="dashboard" /><option value="dashboard_customize" /><option value="speed" />
-<option value="analytics" /><option value="bar_chart" /><option value="show_chart" />
-<option value="timeline" /><option value="query_stats" /><option value="trending_up" />
-<option value="trending_down" /><option value="pie_chart" /><option value="insights" />
-
-{/* Media */}
-<option value="play_arrow" /><option value="play_circle" /><option value="pause" />
-<option value="pause_circle" /><option value="stop" /><option value="stop_circle" />
-<option value="skip_next" /><option value="skip_previous" /><option value="fast_forward" />
-<option value="fast_rewind" /><option value="replay" /><option value="shuffle" />
-<option value="repeat" /><option value="volume_mute" /><option value="music_note" />
-<option value="music_off" /><option value="queue_music" /><option value="playlist_play" />
-
-{/* Places */}
-<option value="house" /><option value="apartment" /><option value="business" />
-<option value="store" /><option value="storefront" /><option value="restaurant" />
-<option value="local_cafe" /><option value="local_bar" /><option value="local_pizza" />
-<option value="local_hospital" /><option value="local_pharmacy" /><option value="local_school" />
-<option value="local_library" /><option value="local_post_office" /><option value="local_police" />
-<option value="local_fire_department" /><option value="park" /><option value="beach_access" />
-<option value="pool" /><option value="fitness_center" /><option value="sports_basketball" />
-<option value="sports_soccer" /><option value="sports_football" /><option value="sports_baseball" />
-<option value="casino" /><option value="nightlife" /><option value="museum" />
-
-{/* Weather */}
-<option value="wb_sunny" /><option value="wb_cloudy" /><option value="cloud" />
-<option value="cloud_queue" /><option value="water_drop" /><option value="air" />
-<option value="thunderstorm" /><option value="grain" /><option value="foggy" />
-<option value="severe_cold" /><option value="ac_unit" /><option value="device_thermostat" />
-
-{/* Misc */}
-<option value="visibility" /><option value="visibility_off" /><option value="help_center" />
-<option value="bug_report" /><option value="flag" /><option value="outlined_flag" />
-<option value="emoji_events" /><option value="emoji_events" /><option value="celebration" />
-<option value="emoji_people" /><option value="pets" /><option value="eco" />
-<option value="science" /><option value="school" /><option value="work" />
-<option value="history" /><option value="schedule" /><option value="update" />
-<option value="calendar_today" /><option value="calendar_month" /><option value="date_range" />
-<option value="timer" /><option value="hourglass_top" /><option value="hourglass_bottom" />
-<option value="alarm" /><option value="access_time" /><option value="schedule" />
-<option value="extension" /><option value="extension_off" /><option value="widgets" />
-<option value="layers" /><option value="backup" /><option value="restore" />
-<option value="sync" /><option value="sync_problem" /><option value="sync_disabled" />
-<option value="open_in_new" /><option value="open_in_full" /><option value="fullscreen" />
-<option value="launch" /><option value="power_settings_new" /><option value="logout" />
-<option value="login" /><option value="app_registration" /><option value="verified" />
-<option value="verified_user" /><option value="shield" /><option value="security" />
-<option value="fingerprint" /><option value="face" /><option value="badge" />
-</datalist>
-      
       {/* HEADER */}
       <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 20px", backgroundColor: "#252526", borderBottom: "1px solid #333", zIndex: 10 }}>
         <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
@@ -1555,8 +1431,48 @@ setSchemaWithHistory(INITIAL_SCHEMA);
                     <div key={key} style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
                       <span style={{fontSize:"10px", textTransform: "capitalize", color: key === "commandEvent" ? "#569cd6" : "#ccc"}}>{key}:</span>
                       {key === "iconName" ? (
-                        <div style={{display: "flex", gap: "5px"}}>
-                           <input type="text" list="material-icons-list" value={selectedComp.props[key]||""} onChange={e => updateComponentProps(selectedComp.id, key, e.target.value)} placeholder="e.g. settings" style={{flex: 1, background: "#3c3c3c", border: "1px solid #555", color: "white", padding: "3px"}} />
+                        <div style={{ position: "relative" }}>
+                          <button
+                            onClick={() => { setIconPickerOpen(o => !o); setIconSearch(""); }}
+                            style={{ width: "100%", background: "#3c3c3c", border: "1px solid #555", color: "white", padding: "4px 8px", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px", borderRadius: "3px" }}
+                          >
+                            <span className="material-icons" style={{ fontSize: 18 }}>{selectedComp.props[key] || "home"}</span>
+                            <span style={{ fontSize: "11px", flex: 1, textAlign: "left" }}>{selectedComp.props[key] || "home"}</span>
+                            <span style={{ fontSize: "10px", color: "#888" }}>▾</span>
+                          </button>
+                          {iconPickerOpen && (
+                            <div style={{
+                              position: "absolute", top: "100%", left: 0, right: 0, zIndex: 9999,
+                              background: "#1e1e1e", border: "1px solid #555", borderRadius: "4px",
+                              padding: "6px", boxShadow: "0 4px 16px rgba(0,0,0,0.6)"
+                            }}>
+                              <input
+                                type="text"
+                                value={iconSearch}
+                                onChange={e => setIconSearch(e.target.value)}
+                                placeholder="Cerca icona..."
+                                autoFocus
+                                style={{ width: "100%", background: "#3c3c3c", border: "1px solid #555", color: "white", padding: "4px", marginBottom: "6px", boxSizing: "border-box", fontSize: "11px" }}
+                              />
+                              <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: "2px", maxHeight: "180px", overflowY: "auto" }}>
+                                {MATERIAL_ICONS.filter(icon => icon.includes(iconSearch.toLowerCase())).map(icon => (
+                                  <button
+                                    key={icon}
+                                    title={icon}
+                                    onClick={() => { updateComponentProps(selectedComp.id, key, icon); setIconPickerOpen(false); }}
+                                    style={{
+                                      background: selectedComp.props[key] === icon ? "#3c3c3c" : "transparent",
+                                      border: selectedComp.props[key] === icon ? "1px solid #569cd6" : "1px solid transparent",
+                                      cursor: "pointer", padding: "4px", borderRadius: "3px",
+                                      display: "flex", alignItems: "center", justifyContent: "center"
+                                    }}
+                                  >
+                                    <span className="material-icons" style={{ fontSize: 18, color: "#e0e0e0" }}>{icon}</span>
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       ) : isColor ? (
                         <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
