@@ -336,8 +336,8 @@ document.addEventListener('mousemove', doDrag);
     let finalHeight = startHeight;
 
     const doDrag = (dragEvent) => {
-      finalWidth = Math.max(400, snapToGrid(startWidth + (dragEvent.clientX - startX), gridEnabled));
-      finalHeight = Math.max(300, snapToGrid(startHeight + (dragEvent.clientY - startY), gridEnabled));
+      finalWidth = Math.max(100, snapToGrid(startWidth + (dragEvent.clientX - startX), gridEnabled));
+      finalHeight = Math.max(100, snapToGrid(startHeight + (dragEvent.clientY - startY), gridEnabled));
       setSchema(prev => ({
         ...prev,
         window: { ...prev.window, width: finalWidth, height: finalHeight }
@@ -954,7 +954,10 @@ setSchemaWithHistory(INITIAL_SCHEMA);
           <div style={{ flex: 1, padding: "20px", overflow: "auto", display: "flex", justifyContent: "center", alignItems: "flex-start" }}>
             <div 
               ref={canvasRef} onDrop={handleDropOnCanvas} onDragOver={handleDragOver}
-              style={{ width: `${schema.window?.width ?? 800}px`, height: `${schema.window?.height ?? 600}px`, backgroundColor: "#2d2d2d", position: "relative", border: "1px solid #3c3c3c", boxShadow: "0 10px 30px rgba(0,0,0,0.5)", backgroundImage: "linear-gradient(#3c3c3c 1px, transparent 1px), linear-gradient(90deg, #3c3c3c 1px, transparent 1px)", backgroundSize: "20px 20px" }}
+              style={{ width: `${schema.window?.width ?? 800}px`, height: `${schema.window?.height ?? 600}px`, backgroundColor: "#2d2d2d", position: "relative", border: "1px solid #3c3c3c", boxShadow: "0 10px 30px rgba(0,0,0,0.5)", backgroundImage: gridEnabled
+                  ? "linear-gradient(#3c3c3c 1px, transparent 1px), linear-gradient(90deg, #3c3c3c 1px, transparent 1px)"
+                  : "none",
+                backgroundSize: "20px 20px" }}
             >
 {currentComponents.map(comp => (
           <div
@@ -1039,13 +1042,13 @@ setSchemaWithHistory(INITIAL_SCHEMA);
                   <div>
                     <span style={{ fontSize: "10px" }}>W:</span>
                     <input type="number" value={schema.window?.width ?? 800}
-                      onChange={e => setSchemaWithHistory(prev => ({ ...prev, window: { ...prev.window, width: Math.max(400, parseInt(e.target.value)||400) } }))}
+                      onChange={e => setSchemaWithHistory(prev => ({ ...prev, window: { ...prev.window, width: Math.max(100, parseInt(e.target.value)||100) } }))}
                       style={{ width: "100%", background: "#3c3c3c", border: "1px solid #555", color: "white", padding: "3px" }} />
                   </div>
                   <div>
                     <span style={{ fontSize: "10px" }}>H:</span>
                     <input type="number" value={schema.window?.height ?? 600}
-                      onChange={e => setSchemaWithHistory(prev => ({ ...prev, window: { ...prev.window, height: Math.max(300, parseInt(e.target.value)||300) } }))}
+                      onChange={e => setSchemaWithHistory(prev => ({ ...prev, window: { ...prev.window, height: Math.max(100, parseInt(e.target.value)||100) } }))}
                       style={{ width: "100%", background: "#3c3c3c", border: "1px solid #555", color: "white", padding: "3px" }} />
                   </div>
                 </div>

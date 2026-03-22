@@ -1,7 +1,7 @@
 /**
  * Basic tests for Radipy App component
  */
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, test, expect } from 'vitest';
 import App from '../App';
 
@@ -69,6 +69,14 @@ describe('App Component - Basic', () => {
     test('renders grid toggle button', () => {
       render(<App />);
       expect(screen.getByTitle(/grid snapping/i)).toBeInTheDocument();
+    });
+
+    test('grid button toggles grid label', async () => {
+      render(<App />);
+      const btn = screen.getByTitle('Grid Snapping');
+      expect(btn.textContent).toMatch(/Grid: ON/);
+      await act(async () => { fireEvent.click(btn); });
+      expect(btn.textContent).toMatch(/Grid: OFF/);
     });
   });
 
