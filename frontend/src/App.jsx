@@ -796,7 +796,9 @@ setSchemaWithHistory(INITIAL_SCHEMA);
                   top: child.layout.y,
                   width: child.layout.width,
                   height: child.layout.height,
-                  pointerEvents: "none"
+                  pointerEvents: "none",
+                  boxSizing: "border-box",
+                  border: child.id === selectedId ? "2px solid #569cd6" : "1px dashed transparent"
                 }}>
                   {renderPreview(child)}
                 </div>
