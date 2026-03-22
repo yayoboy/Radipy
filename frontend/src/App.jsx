@@ -410,6 +410,7 @@ document.addEventListener('mousemove', doDrag);
         ...prev,
         window: { ...prev.window, width: finalWidth, height: finalHeight }
       }));
+      setSizeDraft({ w: null, h: null });
     };
 
     document.addEventListener('mousemove', doDrag);
