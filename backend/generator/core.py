@@ -238,7 +238,7 @@ def generate_tkinter_code(project_json):
                         child_props = child.get("props", {})
                         child_layout = child.get("layout", {})
                         child_base_props = {k: v for k, v in child_props.items()
-                                            if k not in ["tabs", "iconName", "color", "size", "commandEvent", "paneCount"]}
+                                            if k not in ["tabs", "iconName", "color", "size", "commandEvent", "paneCount", "tabCount", "tabHeight"]}
                         if "commandEvent" in child_props and child_props["commandEvent"].strip():
                             cmd_fn = child_props["commandEvent"].strip()
                             commands.add(cmd_fn)
