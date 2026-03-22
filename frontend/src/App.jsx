@@ -21,6 +21,7 @@ const WIDGET_TYPES = [
   { type: 'ttk.Labelframe', desc: "Contenitore visivo (Frame) adornato da bordo e titolo testuale", defaultProps: { text: "Group Title" }, defaultLayout: { width: 200, height: 150 } },
   { type: 'ttk.Separator', desc: "Linea divisoria tra layout visivi", defaultProps: { orient: "horizontal" }, defaultLayout: { width: 150, height: 5 } },
   { type: 'ttk.PanedWindow', desc: "Layout split a due o più pannelli ridimensionabili", defaultProps: { orient: "horizontal", paneCount: 2, sashwidth: 4 }, defaultLayout: { width: 400, height: 300 } },
+  { type: 'ttk.Notebook', desc: "Contenitore a schede selezionabili e droppabili", defaultProps: { tabCount: 2, tabHeight: 28 }, defaultLayout: { width: 400, height: 300 } },
   { type: 'MapView', desc: "Mappa interattiva Google Maps embedded", defaultProps: { address: "Rome, Italy", zoom: 10 }, defaultLayout: { width: 300, height: 250 } },
   { type: 'MatplotlibChart', desc: "Area riservata a rendering di Grafici Scientifici via Matplotlib", defaultProps: { chartType: "line", title: "My Chart" }, defaultLayout: { width: 400, height: 300 } },
   { type: 'Canvas', desc: "Primitive Canvas libero di Tkinter per forme custom", defaultProps: { bg: "white" }, defaultLayout: { width: 200, height: 200 } }
@@ -76,6 +77,7 @@ function App() {
   const [historyStep, setHistoryStep] = useState(0); // triggers re-renders for button state
   const [isResizing, setIsResizing] = useState(false);
   const [gridEnabled, setGridEnabled] = useState(true);
+  const [activeNotebookTab, setActiveNotebookTab] = useState({}); // { [notebookId]: tabIdx }
   const [dragPreview, setDragPreview] = useState(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
@@ -207,6 +209,16 @@ function App() {
         const count = newComp.props.paneCount || 2;
         newComp.panes = Array.from({ length: count }, (_, i) => ({
           id: `${newComp.id}_pane_${i}`,
+          components: []
+        }));
+      }
+
+      // Add Notebook tabs if this is a Notebook being dropped
+      if (newComp.type === 'ttk.Notebook') {
+        const count = newComp.props.tabCount || 2;
+        newComp.tabs = Array.from({ length: count }, (_, i) => ({
+          id: `${newComp.id}_tab_${i}`,
+          label: `Tab ${i + 1}`,
           components: []
         }));
       }

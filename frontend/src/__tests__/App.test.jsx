@@ -49,6 +49,11 @@ describe('App Component - Basic', () => {
       expect(screen.getByText('MapView')).toBeInTheDocument();
       expect(screen.getByText('MatplotlibChart')).toBeInTheDocument();
     });
+
+    test('ttk.Notebook appears in widget sidebar', () => {
+      render(<App />);
+      expect(screen.getByText('ttk.Notebook')).toBeInTheDocument();
+    });
   });
 
   describe('Layout', () => {
