@@ -79,6 +79,7 @@ function App() {
   const [gridEnabled, setGridEnabled] = useState(true);
   const [activeNotebookTab, setActiveNotebookTab] = useState({}); // { [notebookId]: tabIdx }
   const [sizeDraft, setSizeDraft] = useState({ w: null, h: null });
+  const [multiValDraft, setMultiValDraft] = useState(""); // pending input for new multi-value item
   const [dragPreview, setDragPreview] = useState(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
@@ -1492,6 +1493,60 @@ setSchemaWithHistory(INITIAL_SCHEMA);
                           onChange={e => updateComponentProps(selectedComp.id, 'tabHeight', Math.max(18, parseInt(e.target.value)||28))}
                           style={{ width: "100%", background: "#3c3c3c", border: "1px solid #555", color: "white", padding: "3px" }}
                         />
+                      </div>
+                    );
+                  }
+                  const isMultiValue = (selectedComp.type === 'ttk.Combobox' && key === 'values') ||
+                                     (selectedComp.type === 'ttk.Treeview' && key === 'columns');
+                  if (isMultiValue) {
+                    const items = (selectedComp.props[key] || "").split(",").map(s => s.trim()).filter(Boolean);
+                    return (
+                      <div key={key} style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                        <span style={{ fontSize: "10px", color: "#ccc" }}>{key}:</span>
+                        {items.map((item, idx) => (
+                          <div key={idx} style={{ display: "flex", gap: "4px", alignItems: "center" }}>
+                            <input
+                              type="text"
+                              value={item}
+                              onChange={e => {
+                                const newItems = [...items];
+                                newItems[idx] = e.target.value;
+                                updateComponentProps(selectedComp.id, key, newItems.join(","));
+                              }}
+                              style={{ flex: 1, background: "#3c3c3c", border: "1px solid #555", color: "white", padding: "3px", fontSize: "11px" }}
+                            />
+                            <button
+                              onClick={() => {
+                                const newItems = items.filter((_, i) => i !== idx);
+                                updateComponentProps(selectedComp.id, key, newItems.join(","));
+                              }}
+                              style={{ background: "#5a1d1d", border: "none", color: "#ff6b6b", cursor: "pointer", padding: "2px 6px", borderRadius: "3px", fontSize: "12px" }}
+                            >×</button>
+                          </div>
+                        ))}
+                        <div style={{ display: "flex", gap: "4px" }}>
+                          <input
+                            type="text"
+                            value={multiValDraft}
+                            onChange={e => setMultiValDraft(e.target.value)}
+                            onKeyDown={e => {
+                              if (e.key === 'Enter' && multiValDraft.trim()) {
+                                updateComponentProps(selectedComp.id, key, [...items, multiValDraft.trim()].join(","));
+                                setMultiValDraft("");
+                              }
+                            }}
+                            placeholder="New item..."
+                            style={{ flex: 1, background: "#3c3c3c", border: "1px solid #555", color: "white", padding: "3px", fontSize: "11px" }}
+                          />
+                          <button
+                            onClick={() => {
+                              if (!multiValDraft.trim()) return;
+                              updateComponentProps(selectedComp.id, key, [...items, multiValDraft.trim()].join(","));
+                              setMultiValDraft("");
+                            }}
+                            style={{ background: "#1d3a5a", border: "none", color: "#61dafb", cursor: "pointer", padding: "2px 8px", borderRadius: "3px", fontSize: "14px" }}
+                          >+</button>
+                        </div>
                       </div>
                     );
                   }
