@@ -78,6 +78,7 @@ function App() {
   const [isResizing, setIsResizing] = useState(false);
   const [gridEnabled, setGridEnabled] = useState(true);
   const [activeNotebookTab, setActiveNotebookTab] = useState({}); // { [notebookId]: tabIdx }
+  const [sizeDraft, setSizeDraft] = useState({ w: null, h: null });
   const [dragPreview, setDragPreview] = useState(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
@@ -1211,15 +1212,33 @@ setSchemaWithHistory(INITIAL_SCHEMA);
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "5px" }}>
                   <div>
                     <span style={{ fontSize: "10px" }}>W:</span>
-                    <input type="number" value={schema.window?.width ?? 800}
-                      onChange={e => setSchemaWithHistory(prev => ({ ...prev, window: { ...prev.window, width: Math.max(100, parseInt(e.target.value)||100) } }))}
-                      style={{ width: "100%", background: "#3c3c3c", border: "1px solid #555", color: "white", padding: "3px" }} />
+                    <input
+                      type="number"
+                      min={100}
+                      value={sizeDraft.w ?? (schema.window?.width ?? 800)}
+                      onChange={e => setSizeDraft(prev => ({ ...prev, w: e.target.value }))}
+                      onBlur={e => {
+                        const val = Math.max(100, parseInt(e.target.value) || 100);
+                        setSchemaWithHistory(prev => ({ ...prev, window: { ...prev.window, width: val } }));
+                        setSizeDraft(prev => ({ ...prev, w: null }));
+                      }}
+                      style={{ width: "100%", background: "#3c3c3c", border: "1px solid #555", color: "white", padding: "3px" }}
+                    />
                   </div>
                   <div>
                     <span style={{ fontSize: "10px" }}>H:</span>
-                    <input type="number" value={schema.window?.height ?? 600}
-                      onChange={e => setSchemaWithHistory(prev => ({ ...prev, window: { ...prev.window, height: Math.max(100, parseInt(e.target.value)||100) } }))}
-                      style={{ width: "100%", background: "#3c3c3c", border: "1px solid #555", color: "white", padding: "3px" }} />
+                    <input
+                      type="number"
+                      min={100}
+                      value={sizeDraft.h ?? (schema.window?.height ?? 600)}
+                      onChange={e => setSizeDraft(prev => ({ ...prev, h: e.target.value }))}
+                      onBlur={e => {
+                        const val = Math.max(100, parseInt(e.target.value) || 100);
+                        setSchemaWithHistory(prev => ({ ...prev, window: { ...prev.window, height: val } }));
+                        setSizeDraft(prev => ({ ...prev, h: null }));
+                      }}
+                      style={{ width: "100%", background: "#3c3c3c", border: "1px solid #555", color: "white", padding: "3px" }}
+                    />
                   </div>
                 </div>
 
