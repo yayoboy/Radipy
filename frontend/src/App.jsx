@@ -423,12 +423,31 @@ const updateComponentProps = (id, key, value) => {
       ...prev,
       pages: prev.pages.map((page, pi) => {
         if (pi !== activePage) return page;
-        return {
-          ...page,
-          components: page.components.map(c =>
-            c.id !== id ? c : { ...c, props: { ...c.props, [key]: value } }
-          )
-        };
+        let found = false;
+        const newComponents = page.components.map(c => {
+          if (c.id === id) { found = true; return { ...c, props: { ...c.props, [key]: value } }; }
+          if (c.tabs) {
+            const newTabs = c.tabs.map(tab => {
+              const hit = (tab.components || []).some(ch => ch.id === id);
+              if (!hit) return tab;
+              found = true;
+              return { ...tab, components: (tab.components || []).map(ch => ch.id !== id ? ch : { ...ch, props: { ...ch.props, [key]: value } }) };
+            });
+            if (newTabs !== c.tabs) return { ...c, tabs: newTabs };
+          }
+          if (c.panes) {
+            const newPanes = c.panes.map(pane => {
+              const hit = (pane.components || []).some(ch => ch.id === id);
+              if (!hit) return pane;
+              found = true;
+              return { ...pane, components: (pane.components || []).map(ch => ch.id !== id ? ch : { ...ch, props: { ...ch.props, [key]: value } }) };
+            });
+            if (newPanes !== c.panes) return { ...c, panes: newPanes };
+          }
+          return c;
+        });
+        if (!found) return page;
+        return { ...page, components: newComponents };
       })
     }));
   };
