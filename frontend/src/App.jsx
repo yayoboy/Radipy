@@ -608,7 +608,27 @@ setSchemaWithHistory(INITIAL_SCHEMA);
   }, [selectedId, activePage, schema]);
 
   const currentComponents = schema.pages[activePage]?.components || [];
-  const selectedComp = currentComponents.find(c => c.id === selectedId);
+
+  const findComponentById = (id, comps) => {
+    for (const c of comps) {
+      if (c.id === id) return c;
+      if (c.tabs) {
+        for (const tab of c.tabs) {
+          const found = findComponentById(id, tab.components);
+          if (found) return found;
+        }
+      }
+      if (c.panes) {
+        for (const pane of c.panes) {
+          const found = findComponentById(id, pane.components);
+          if (found) return found;
+        }
+      }
+    }
+    return null;
+  };
+
+  const selectedComp = findComponentById(selectedId, currentComponents);
 
   // Generatore Preview HTML realistica
   const renderPreview = (comp) => {
