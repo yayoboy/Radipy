@@ -622,6 +622,73 @@ setSchemaWithHistory(INITIAL_SCHEMA);
           </div>
         );
       }
+      case 'ttk.Notebook': {
+        const tabs = comp.tabs || [];
+        const tabHeight = comp.props?.tabHeight || 28;
+        const activeTabIdx = activeNotebookTab[comp.id] ?? 0;
+        const tabCount = (tabs.length > 0) ? tabs.length : (comp.props?.tabCount || 2);
+
+        return (
+          <div style={{
+            width: "100%", height: "100%",
+            background: "#252526",
+            border: "1px solid #4a4a4a",
+            display: "flex", flexDirection: "column",
+            overflow: "hidden"
+          }}>
+            {/* Tab bar */}
+            <div style={{
+              display: "flex",
+              height: `${tabHeight}px`,
+              borderBottom: "1px solid #555",
+              flexShrink: 0,
+              overflow: "hidden"
+            }}>
+              {Array.from({ length: tabCount }, (_, i) => {
+                const tab = tabs[i] || { label: `Tab ${i + 1}` };
+                const isActive = i === activeTabIdx;
+                return (
+                  <div key={i} style={{
+                    padding: "0 12px",
+                    display: "flex",
+                    alignItems: "center",
+                    fontSize: "11px",
+                    color: isActive ? "#ffffff" : "#888",
+                    background: isActive ? "#3c3c3c" : "transparent",
+                    borderRight: "1px solid #555",
+                    borderBottom: isActive ? "2px solid #569cd6" : "none",
+                    whiteSpace: "nowrap",
+                    flexShrink: 0
+                  }}>
+                    {tab.label || `Tab ${i + 1}`}
+                  </div>
+                );
+              })}
+            </div>
+            {/* Content area */}
+            <div style={{ flex: 1, position: "relative", overflow: "hidden" }}>
+              <span style={{
+                position: "absolute", top: 2, left: 4,
+                fontSize: "9px", color: "#555", pointerEvents: "none"
+              }}>
+                Tab {activeTabIdx}
+              </span>
+              {tabs[activeTabIdx]?.components?.map(child => (
+                <div key={child.id} style={{
+                  position: "absolute",
+                  left: child.layout.x,
+                  top: child.layout.y,
+                  width: child.layout.width,
+                  height: child.layout.height,
+                  pointerEvents: "none"
+                }}>
+                  {renderPreview(child)}
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      }
       case 'MapView': return <div style={{width:"100%", height:"100%", background:"#e5e3df", display:"flex", alignItems:"center", justifyContent:"center", color:"#555"}}>🗺️ {p.address}</div>;
       case 'MatplotlibChart': return <div style={{width:"100%", height:"100%", background:"#fff", display:"flex", alignItems:"center", justifyContent:"center", color:"#555"}}>📈 {p.title}</div>;
       case 'Icon': return <span className="material-icons" style={{fontSize: p.size || 24, color: p.color || "#ffffff", display:"flex", alignItems:"center", justifyContent:"center", width:"100%", height:"100%"}}>{p.iconName || "home"}</span>;
@@ -973,7 +1040,23 @@ setSchemaWithHistory(INITIAL_SCHEMA);
             >
 {currentComponents.map(comp => (
           <div
-            key={comp.id} draggable={!isResizing} onDragStart={(e) => handleDragStartFromCanvas(e, comp)} onClick={(e) => { e.stopPropagation(); setSelectedId(comp.id); }}
+            key={comp.id} draggable={!isResizing} onDragStart={(e) => handleDragStartFromCanvas(e, comp)} onClick={(e) => {
+              e.stopPropagation();
+              setSelectedId(comp.id);
+              // For Notebook: detect which tab was clicked in the tab bar
+              if (comp.type === 'ttk.Notebook' && comp.tabs) {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const relY = e.clientY - rect.top;
+                const tabHeight = comp.props?.tabHeight || 28;
+                if (relY <= tabHeight) {
+                  const relX = e.clientX - rect.left;
+                  const tabCount = comp.tabs.length;
+                  const tabWidth = rect.width / tabCount;
+                  const tabIdx = Math.min(Math.floor(relX / tabWidth), tabCount - 1);
+                  setActiveNotebookTab(prev => ({ ...prev, [comp.id]: tabIdx }));
+                }
+              }
+            }}
             style={{ position: "absolute", left: comp.layout.x, top: comp.layout.y, width: comp.layout.width, height: comp.layout.height, border: selectedId === comp.id ? "2px solid #569cd6" : "1px dashed transparent", cursor: isResizing ? "nwse-resize" : "move", userSelect: "none", boxSizing: "border-box" }}
             onMouseEnter={(e) => e.currentTarget.style.borderColor = selectedId === comp.id ? "#569cd6" : "#4a4a4a"}
             onMouseLeave={(e) => e.currentTarget.style.borderColor = selectedId === comp.id ? "#569cd6" : "transparent"}
