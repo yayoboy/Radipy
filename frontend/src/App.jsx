@@ -419,38 +419,38 @@ document.addEventListener('mousemove', doDrag);
 
 // ---- Dati ----
 const updateComponentProps = (id, key, value) => {
-    setSchemaWithHistory(prev => ({
-      ...prev,
-      pages: prev.pages.map((page, pi) => {
-        if (pi !== activePage) return page;
-        let found = false;
-        const newComponents = page.components.map(c => {
-          if (c.id === id) { found = true; return { ...c, props: { ...c.props, [key]: value } }; }
-          if (c.tabs) {
-            const newTabs = c.tabs.map(tab => {
-              const hit = (tab.components || []).some(ch => ch.id === id);
-              if (!hit) return tab;
-              found = true;
-              return { ...tab, components: (tab.components || []).map(ch => ch.id !== id ? ch : { ...ch, props: { ...ch.props, [key]: value } }) };
-            });
-            if (newTabs !== c.tabs) return { ...c, tabs: newTabs };
-          }
-          if (c.panes) {
-            const newPanes = c.panes.map(pane => {
-              const hit = (pane.components || []).some(ch => ch.id === id);
-              if (!hit) return pane;
-              found = true;
-              return { ...pane, components: (pane.components || []).map(ch => ch.id !== id ? ch : { ...ch, props: { ...ch.props, [key]: value } }) };
-            });
-            if (newPanes !== c.panes) return { ...c, panes: newPanes };
-          }
-          return c;
-        });
-        if (!found) return page;
-        return { ...page, components: newComponents };
-      })
-    }));
-  };
+  setSchemaWithHistory(prev => ({
+    ...prev,
+    pages: prev.pages.map((page, pi) => {
+      if (pi !== activePage) return page;
+      let found = false;
+      const newComponents = page.components.map(c => {
+        if (c.id === id) { found = true; return { ...c, props: { ...c.props, [key]: value } }; }
+        if (c.tabs) {
+          const newTabs = c.tabs.map(tab => {
+            const hit = (tab.components || []).some(ch => ch.id === id);
+            if (!hit) return tab;
+            found = true;
+            return { ...tab, components: (tab.components || []).map(ch => ch.id !== id ? ch : { ...ch, props: { ...ch.props, [key]: value } }) };
+          });
+          if (found) return { ...c, tabs: newTabs };
+        }
+        if (c.panes) {
+          const newPanes = c.panes.map(pane => {
+            const hit = (pane.components || []).some(ch => ch.id === id);
+            if (!hit) return pane;
+            found = true;
+            return { ...pane, components: (pane.components || []).map(ch => ch.id !== id ? ch : { ...ch, props: { ...ch.props, [key]: value } }) };
+          });
+          if (found) return { ...c, panes: newPanes };
+        }
+        return c;
+      });
+      if (!found) return page;
+      return { ...page, components: newComponents };
+    })
+  }));
+};
 
   const updateComponentLayout = (id, updates) => {
     setSchemaWithHistory(prev => ({
