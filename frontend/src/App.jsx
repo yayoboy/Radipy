@@ -1381,6 +1381,7 @@ setSchemaWithHistory(INITIAL_SCHEMA);
                         <span style={{ fontSize: "10px", color: "#ccc" }}>tabHeight:</span>
                         <input
                           type="number"
+                          min={18}
                           value={selectedComp.props.tabHeight || 28}
                           onChange={e => updateComponentProps(selectedComp.id, 'tabHeight', Math.max(18, parseInt(e.target.value)||28))}
                           style={{ width: "100%", background: "#3c3c3c", border: "1px solid #555", color: "white", padding: "3px" }}
