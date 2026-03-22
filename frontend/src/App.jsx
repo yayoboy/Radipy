@@ -119,6 +119,7 @@ function App() {
   const [gridEnabled, setGridEnabled] = useState(true);
   const [activeNotebookTab, setActiveNotebookTab] = useState({}); // { [notebookId]: tabIdx }
   const [tabScrollOffset, setTabScrollOffset] = useState({}); // { [notebookId]: number }
+  const [draggingChild, setDraggingChild] = useState(null); // { id, notebookId }
   const [sizeDraft, setSizeDraft] = useState({ w: null, h: null });
   const [multiValDraft, setMultiValDraft] = useState(""); // pending input for new multi-value item
   const [iconPickerOpen, setIconPickerOpen] = useState(false);
@@ -424,6 +425,80 @@ updateComponentLayout(data.id, { x, y });
     };
 
 document.addEventListener('mousemove', doDrag);
+  document.addEventListener('mouseup', stopDrag);
+};
+
+  const startChildDrag = (e, notebookComp, childComp) => {
+  e.stopPropagation();
+  e.preventDefault();
+
+  const startClientX = e.clientX;
+  const startClientY = e.clientY;
+  const startLayoutX = childComp.layout.x;
+  const startLayoutY = childComp.layout.y;
+  const notebookId = notebookComp.id;
+  const childId = childComp.id;
+  let finalX = startLayoutX;
+  let finalY = startLayoutY;
+
+  setDraggingChild({ id: childId, notebookId });
+
+  const doDrag = (dragEvent) => {
+    const dx = dragEvent.clientX - startClientX;
+    const dy = dragEvent.clientY - startClientY;
+    finalX = snapToGrid(Math.max(0, startLayoutX + dx), gridEnabled);
+    finalY = snapToGrid(Math.max(0, startLayoutY + dy), gridEnabled);
+    setSchema(prev => ({
+      ...prev,
+      pages: prev.pages.map((page, pi) => {
+        if (pi !== activePage) return page;
+        return {
+          ...page,
+          components: page.components.map(c => {
+            if (c.id !== notebookId || !c.tabs) return c;
+            return {
+              ...c,
+              tabs: c.tabs.map(tab => ({
+                ...tab,
+                components: (tab.components || []).map(ch =>
+                  ch.id !== childId ? ch : { ...ch, layout: { ...ch.layout, x: finalX, y: finalY } }
+                )
+              }))
+            };
+          })
+        };
+      })
+    }));
+  };
+
+  const stopDrag = () => {
+    document.removeEventListener('mousemove', doDrag);
+    document.removeEventListener('mouseup', stopDrag);
+    setDraggingChild(null);
+    setSchemaWithHistory(prev => ({
+      ...prev,
+      pages: prev.pages.map((page, pi) => {
+        if (pi !== activePage) return page;
+        return {
+          ...page,
+          components: page.components.map(c => {
+            if (c.id !== notebookId || !c.tabs) return c;
+            return {
+              ...c,
+              tabs: c.tabs.map(tab => ({
+                ...tab,
+                components: (tab.components || []).map(ch =>
+                  ch.id !== childId ? ch : { ...ch, layout: { ...ch.layout, x: finalX, y: finalY } }
+                )
+              }))
+            };
+          })
+        };
+      })
+    }));
+  };
+
+  document.addEventListener('mousemove', doDrag);
   document.addEventListener('mouseup', stopDrag);
 };
 
@@ -1159,6 +1234,27 @@ setSchemaWithHistory(INITIAL_SCHEMA);
                     setSelectedId(hit.id);
                   }
                 }
+              }
+            }}
+            onMouseDown={(e) => {
+              if (comp.type !== 'ttk.Notebook') return;
+              const rect = e.currentTarget.getBoundingClientRect();
+              const relX = e.clientX - rect.left;
+              const relY = e.clientY - rect.top;
+              const tabHeight = comp.props?.tabHeight || 28;
+              if ((comp.props?.tabSide || 'top') !== 'top') return;
+              if (relY <= tabHeight) return;
+              const activeTabIdx = activeNotebookTab[comp.id] ?? 0;
+              const tabChildren = comp.tabs?.[activeTabIdx]?.components || [];
+              const contentX = relX;
+              const contentY = relY - tabHeight;
+              const hit = [...tabChildren].reverse().find(child =>
+                contentX >= child.layout.x && contentX <= child.layout.x + child.layout.width &&
+                contentY >= child.layout.y && contentY <= child.layout.y + child.layout.height
+              );
+              if (hit) {
+                setSelectedId(hit.id);
+                startChildDrag(e, comp, hit);
               }
             }}
             style={{ position: "absolute", left: comp.layout.x, top: comp.layout.y, width: comp.layout.width, height: comp.layout.height, border: selectedId === comp.id ? "2px solid #569cd6" : "1px dashed transparent", cursor: isResizing ? "nwse-resize" : "move", userSelect: "none", boxSizing: "border-box" }}
