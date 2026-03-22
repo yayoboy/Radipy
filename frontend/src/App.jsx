@@ -112,6 +112,7 @@ function App() {
   const [selectedSidebarMenu, setSelectedSidebarMenu] = useState(null);
   
   const canvasRef = useRef(null);
+  const iconPickerRef = useRef(null);
   const history = useRef([]);
   const historyIndex = useRef(-1);
   const [historyStep, setHistoryStep] = useState(0); // triggers re-renders for button state
@@ -502,6 +503,74 @@ document.addEventListener('mousemove', doDrag);
   document.addEventListener('mouseup', stopDrag);
 };
 
+const startChildResize = (e, notebookComp, childComp) => {
+  e.stopPropagation();
+  e.preventDefault();
+  const startX = e.clientX;
+  const startY = e.clientY;
+  const startW = childComp.layout.width;
+  const startH = childComp.layout.height;
+  const notebookId = notebookComp.id;
+  const childId = childComp.id;
+  let finalW = startW;
+  let finalH = startH;
+
+  const doDrag = (ev) => {
+    finalW = Math.max(20, snapToGrid(startW + (ev.clientX - startX), gridEnabled));
+    finalH = Math.max(20, snapToGrid(startH + (ev.clientY - startY), gridEnabled));
+    setSchema(prev => ({
+      ...prev,
+      pages: prev.pages.map((page, pi) => {
+        if (pi !== activePage) return page;
+        return {
+          ...page,
+          components: page.components.map(c => {
+            if (c.id !== notebookId || !c.tabs) return c;
+            return {
+              ...c,
+              tabs: c.tabs.map(tab => ({
+                ...tab,
+                components: (tab.components || []).map(ch =>
+                  ch.id !== childId ? ch : { ...ch, layout: { ...ch.layout, width: finalW, height: finalH } }
+                )
+              }))
+            };
+          })
+        };
+      })
+    }));
+  };
+
+  const stopDrag = () => {
+    document.removeEventListener('mousemove', doDrag);
+    document.removeEventListener('mouseup', stopDrag);
+    setSchemaWithHistory(prev => ({
+      ...prev,
+      pages: prev.pages.map((page, pi) => {
+        if (pi !== activePage) return page;
+        return {
+          ...page,
+          components: page.components.map(c => {
+            if (c.id !== notebookId || !c.tabs) return c;
+            return {
+              ...c,
+              tabs: c.tabs.map(tab => ({
+                ...tab,
+                components: (tab.components || []).map(ch =>
+                  ch.id !== childId ? ch : { ...ch, layout: { ...ch.layout, width: finalW, height: finalH } }
+                )
+              }))
+            };
+          })
+        };
+      })
+    }));
+  };
+
+  document.addEventListener('mousemove', doDrag);
+  document.addEventListener('mouseup', stopDrag);
+};
+
   const startCanvasResize = (e) => {
     e.stopPropagation();
     e.preventDefault();
@@ -745,6 +814,23 @@ setSchemaWithHistory(INITIAL_SCHEMA);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [selectedId, activePage, schema]);
 
+  // Reset multi-value draft input when switching selected widget
+  useEffect(() => {
+    setMultiValDraft("");
+  }, [selectedId]);
+
+  // Close icon picker when clicking outside
+  useEffect(() => {
+    if (!iconPickerOpen) return;
+    const handleClickOutside = (e) => {
+      if (iconPickerRef.current && !iconPickerRef.current.contains(e.target)) {
+        setIconPickerOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [iconPickerOpen]);
+
   const currentComponents = schema.pages[activePage]?.components || [];
 
   const findComponentById = (id, comps) => {
@@ -767,6 +853,13 @@ setSchemaWithHistory(INITIAL_SCHEMA);
   };
 
   const selectedComp = findComponentById(selectedId, currentComponents);
+
+  // Find Notebook parent if a nested child is selected
+  const parentNotebook = selectedId
+    ? currentComponents.find(c =>
+        c.tabs && c.tabs.some(tab => (tab.components || []).some(ch => ch.id === selectedId))
+      ) ?? null
+    : null;
 
   // Generatore Preview HTML realistica
   const renderPreview = (comp) => {
@@ -1180,12 +1273,13 @@ setSchemaWithHistory(INITIAL_SCHEMA);
           </div>
 
           <div style={{ flex: 1, padding: "20px", overflow: "auto", display: "flex", justifyContent: "center", alignItems: "flex-start" }}>
-            <div 
+            <div style={{ position: "relative", width: `${schema.window?.width ?? 800}px`, height: `${schema.window?.height ?? 600}px`, flexShrink: 0 }}>
+            <div
               ref={canvasRef} onDrop={handleDropOnCanvas} onDragOver={handleDragOver}
-              style={{ width: `${schema.window?.width ?? 800}px`, height: `${schema.window?.height ?? 600}px`, backgroundColor: "#2d2d2d", position: "relative", border: "1px solid #3c3c3c", boxShadow: "0 10px 30px rgba(0,0,0,0.5)", backgroundImage: gridEnabled
+              style={{ width: "100%", height: "100%", backgroundColor: "#2d2d2d", position: "relative", border: "1px solid #3c3c3c", boxShadow: "0 10px 30px rgba(0,0,0,0.5)", backgroundImage: gridEnabled
                   ? "linear-gradient(#3c3c3c 1px, transparent 1px), linear-gradient(90deg, #3c3c3c 1px, transparent 1px)"
                   : "none",
-                backgroundSize: "20px 20px" }}
+                backgroundSize: "20px 20px", overflow: "hidden" }}
             >
 {currentComponents.map(comp => (
           <div
@@ -1300,7 +1394,8 @@ setSchemaWithHistory(INITIAL_SCHEMA);
             </div>
           </div>
         )}
-        {/* Canvas resize handle */}
+            </div>
+        {/* Canvas resize handle — sibling of canvas div, not inside it */}
         <div
           data-testid="canvas-resize-handle"
           onMouseDown={startCanvasResize}
@@ -1317,6 +1412,28 @@ setSchemaWithHistory(INITIAL_SCHEMA);
             border: "2px solid #1e1e1e"
           }}
         />
+        {/* Child resize handle overlay for selected Notebook children */}
+        {parentNotebook && selectedComp && (() => {
+          const tabHeight = parentNotebook.props?.tabHeight || 28;
+          const childLeft = parentNotebook.layout.x + selectedComp.layout.x;
+          const childTop = parentNotebook.layout.y + tabHeight + selectedComp.layout.y;
+          return (
+            <div
+              onMouseDown={(e) => startChildResize(e, parentNotebook, selectedComp)}
+              style={{
+                position: "absolute",
+                left: childLeft + selectedComp.layout.width - 4,
+                top: childTop + selectedComp.layout.height - 4,
+                width: 8,
+                height: 8,
+                backgroundColor: "#569cd6",
+                cursor: "se-resize",
+                borderRadius: "50%",
+                zIndex: 100
+              }}
+            />
+          );
+        })()}
             </div>
           </div>
         </section>
@@ -1605,7 +1722,7 @@ setSchemaWithHistory(INITIAL_SCHEMA);
                     <div key={key} style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
                       <span style={{fontSize:"10px", textTransform: "capitalize", color: key === "commandEvent" ? "#569cd6" : "#ccc"}}>{key}:</span>
                       {key === "iconName" ? (
-                        <div style={{ position: "relative" }}>
+                        <div ref={iconPickerRef} style={{ position: "relative" }}>
                           <button
                             onClick={() => { setIconPickerOpen(o => !o); setIconSearch(""); }}
                             style={{ width: "100%", background: "#3c3c3c", border: "1px solid #555", color: "white", padding: "4px 8px", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px", borderRadius: "3px" }}
