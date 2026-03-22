@@ -429,3 +429,42 @@ def test_notebook_tab_height_style():
     }
     code = generate_tkinter_code(project)
     assert "style.configure('TNotebook.Tab'" in code
+
+def test_notebook_vertical_tabside():
+    project = {
+        "theme": "",
+        "pages": [{
+            "name": "Main",
+            "components": [{
+                "type": "ttk.Notebook",
+                "id": "notebook_1",
+                "props": {"tabCount": 2, "tabHeight": 28, "tabSide": "left"},
+                "layout": {"x": 0, "y": 0, "width": 400, "height": 300},
+                "tabs": [
+                    {"id": "notebook_1_tab_0", "label": "Tab 1", "components": []},
+                    {"id": "notebook_1_tab_1", "label": "Tab 2", "components": []}
+                ]
+            }]
+        }]
+    }
+    code = generate_tkinter_code(project)
+    assert "style.configure('TNotebook', tabposition='wn')" in code
+
+def test_notebook_top_tabside_no_tabposition():
+    project = {
+        "theme": "",
+        "pages": [{
+            "name": "Main",
+            "components": [{
+                "type": "ttk.Notebook",
+                "id": "notebook_1",
+                "props": {"tabCount": 2, "tabHeight": 28, "tabSide": "top"},
+                "layout": {"x": 0, "y": 0, "width": 400, "height": 300},
+                "tabs": [
+                    {"id": "notebook_1_tab_0", "label": "Tab 1", "components": []},
+                ]
+            }]
+        }]
+    }
+    code = generate_tkinter_code(project)
+    assert "tabposition" not in code

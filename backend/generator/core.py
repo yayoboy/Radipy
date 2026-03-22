@@ -101,7 +101,7 @@ def generate_tkinter_code(project_json):
             props = comp.get("props", {})
             layout = comp.get("layout", {})
 
-            base_props = {k: v for k, v in props.items() if k not in ["tabs", "iconName", "color", "size", "commandEvent", "paneCount", "tabCount", "tabHeight"]}
+            base_props = {k: v for k, v in props.items() if k not in ["tabs", "iconName", "color", "size", "commandEvent", "paneCount", "tabCount", "tabHeight", "tabSide"]}
 
             if "commandEvent" in props and props["commandEvent"].strip():
                 cmd_fn = props["commandEvent"].strip()
@@ -159,9 +159,12 @@ def generate_tkinter_code(project_json):
 
             elif comp_type == "ttk.Notebook":
                 tab_height = props.get("tabHeight", 28)
+                tab_side = props.get("tabSide", "top")
                 padding_y = max(1, tab_height // 4)
                 lines.append(f"        style = ttk.Style()")
                 lines.append(f"        style.configure('TNotebook.Tab', padding=[10, {padding_y}])")
+                if tab_side == "left":
+                    lines.append(f"        style.configure('TNotebook', tabposition='wn')")
                 lines.append(f"        {comp_id} = ttk.Notebook({parent})")
                 lines.append(f"        {comp_id}.place({place_params})")
                 lines.append("")
@@ -183,7 +186,7 @@ def generate_tkinter_code(project_json):
                         child_props = child.get("props", {})
                         child_layout = child.get("layout", {})
                         child_base_props = {k: v for k, v in child_props.items()
-                                            if k not in ["tabs", "iconName", "color", "size", "commandEvent", "paneCount", "tabCount", "tabHeight"]}
+                                            if k not in ["tabs", "iconName", "color", "size", "commandEvent", "paneCount", "tabCount", "tabHeight", "tabSide"]}
                         if "commandEvent" in child_props and child_props["commandEvent"].strip():
                             cmd_fn = child_props["commandEvent"].strip()
                             commands.add(cmd_fn)

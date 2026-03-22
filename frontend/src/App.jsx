@@ -21,7 +21,7 @@ const WIDGET_TYPES = [
   { type: 'ttk.Labelframe', desc: "Contenitore visivo (Frame) adornato da bordo e titolo testuale", defaultProps: { text: "Group Title" }, defaultLayout: { width: 200, height: 150 } },
   { type: 'ttk.Separator', desc: "Linea divisoria tra layout visivi", defaultProps: { orient: "horizontal" }, defaultLayout: { width: 150, height: 5 } },
   { type: 'ttk.PanedWindow', desc: "Layout split a due o più pannelli ridimensionabili", defaultProps: { orient: "horizontal", paneCount: 2, sashwidth: 4 }, defaultLayout: { width: 400, height: 300 } },
-  { type: 'ttk.Notebook', desc: "Contenitore a schede selezionabili e droppabili", defaultProps: { tabCount: 2, tabHeight: 28 }, defaultLayout: { width: 400, height: 300 } },
+  { type: 'ttk.Notebook', desc: "Contenitore a schede selezionabili e droppabili", defaultProps: { tabCount: 2, tabHeight: 28, tabSide: 'top' }, defaultLayout: { width: 400, height: 300 } },
   { type: 'MapView', desc: "Mappa interattiva Google Maps embedded", defaultProps: { address: "Rome, Italy", zoom: 10 }, defaultLayout: { width: 300, height: 250 } },
   { type: 'MatplotlibChart', desc: "Area riservata a rendering di Grafici Scientifici via Matplotlib", defaultProps: { chartType: "line", title: "My Chart" }, defaultLayout: { width: 400, height: 300 } },
   { type: 'Canvas', desc: "Primitive Canvas libero di Tkinter per forme custom", defaultProps: { bg: "white" }, defaultLayout: { width: 200, height: 200 } }
@@ -787,56 +787,90 @@ setSchemaWithHistory(INITIAL_SCHEMA);
         const rawIdx = activeNotebookTab[comp.id] ?? 0;
         const activeTabIdx = tabs.length > 0 ? Math.min(rawIdx, tabs.length - 1) : 0;
         const tabCount = (tabs.length > 0) ? tabs.length : (comp.props?.tabCount || 2);
+        const tabSide = comp.props?.tabSide || 'top';
+        const isVertical = tabSide === 'left';
 
         return (
           <div style={{
             width: "100%", height: "100%",
             background: "#252526",
             border: "1px solid #4a4a4a",
-            display: "flex", flexDirection: "column",
+            display: "flex", flexDirection: isVertical ? "row" : "column",
             overflow: "hidden"
           }}>
-            {/* Tab bar with scroll arrows */}
-            {(() => {
-              const AVG_TAB_W = 80;
-              const visibleCount = Math.max(1, Math.floor((comp.layout.width - (tabCount > 3 ? 40 : 0)) / AVG_TAB_W));
-              const scrollOffset = Math.min(tabScrollOffset[comp.id] ?? 0, Math.max(0, tabCount - visibleCount));
-              const canScrollLeft = scrollOffset > 0;
-              const canScrollRight = scrollOffset + visibleCount < tabCount;
-              return (
-                <div style={{ display: "flex", height: `${tabHeight}px`, borderBottom: "1px solid #555", flexShrink: 0, overflow: "hidden", alignItems: "stretch" }}>
-                  {canScrollLeft && (
-                    <button
-                      onClick={e => { e.stopPropagation(); setTabScrollOffset(prev => ({ ...prev, [comp.id]: Math.max(0, scrollOffset - 1) })); }}
-                      style={{ background: "#3c3c3c", border: "none", color: "#aaa", cursor: "pointer", padding: "0 4px", flexShrink: 0, fontSize: "12px" }}
-                    >◀</button>
-                  )}
-                  {Array.from({ length: tabCount }, (_, i) => {
-                    if (i < scrollOffset || i >= scrollOffset + visibleCount) return null;
-                    const tab = tabs[i] || { label: `Tab ${i + 1}` };
-                    const isActive = i === activeTabIdx;
-                    return (
-                      <div key={i} style={{
-                        padding: "0 12px", display: "flex", alignItems: "center",
+            {isVertical ? (
+              /* Vertical tab bar (left side) */
+              <div style={{
+                display: "flex", flexDirection: "column",
+                width: `${tabHeight}px`, borderRight: "1px solid #555",
+                flexShrink: 0, overflow: "hidden"
+              }}>
+                {Array.from({ length: tabCount }, (_, i) => {
+                  const tab = tabs[i] || { label: `Tab ${i + 1}` };
+                  const isActive = i === activeTabIdx;
+                  return (
+                    <div key={i}
+                      onClick={e => { e.stopPropagation(); setActiveNotebookTab(prev => ({ ...prev, [comp.id]: i })); }}
+                      style={{
+                        padding: "12px 0", display: "flex", alignItems: "center", justifyContent: "center",
                         fontSize: "11px", color: isActive ? "#ffffff" : "#888",
                         background: isActive ? "#3c3c3c" : "transparent",
-                        borderRight: "1px solid #555",
-                        borderBottom: isActive ? "2px solid #569cd6" : "none",
-                        whiteSpace: "nowrap", flexShrink: 0
-                      }}>
-                        {tab.label || `Tab ${i + 1}`}
-                      </div>
-                    );
-                  })}
-                  {canScrollRight && (
-                    <button
-                      onClick={e => { e.stopPropagation(); setTabScrollOffset(prev => ({ ...prev, [comp.id]: scrollOffset + 1 })); }}
-                      style={{ background: "#3c3c3c", border: "none", color: "#aaa", cursor: "pointer", padding: "0 4px", flexShrink: 0, fontSize: "12px", marginLeft: "auto" }}
-                    >▶</button>
-                  )}
-                </div>
-              );
-            })()}
+                        borderBottom: "1px solid #555",
+                        borderLeft: isActive ? "2px solid #569cd6" : "none",
+                        writingMode: "vertical-rl",
+                        transform: "rotate(180deg)",
+                        whiteSpace: "nowrap",
+                        flexShrink: 0, cursor: "pointer"
+                      }}
+                    >
+                      {tab.label || `Tab ${i + 1}`}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              /* Horizontal tab bar (top) */
+              (() => {
+                const AVG_TAB_W = 80;
+                const visibleCount = Math.max(1, Math.floor((comp.layout.width - (tabCount > 3 ? 40 : 0)) / AVG_TAB_W));
+                const scrollOffset = Math.min(tabScrollOffset[comp.id] ?? 0, Math.max(0, tabCount - visibleCount));
+                const canScrollLeft = scrollOffset > 0;
+                const canScrollRight = scrollOffset + visibleCount < tabCount;
+                return (
+                  <div style={{ display: "flex", height: `${tabHeight}px`, borderBottom: "1px solid #555", flexShrink: 0, overflow: "hidden", alignItems: "stretch" }}>
+                    {canScrollLeft && (
+                      <button
+                        onClick={e => { e.stopPropagation(); setTabScrollOffset(prev => ({ ...prev, [comp.id]: Math.max(0, scrollOffset - 1) })); }}
+                        style={{ background: "#3c3c3c", border: "none", color: "#aaa", cursor: "pointer", padding: "0 4px", flexShrink: 0, fontSize: "12px" }}
+                      >◀</button>
+                    )}
+                    {Array.from({ length: tabCount }, (_, i) => {
+                      if (i < scrollOffset || i >= scrollOffset + visibleCount) return null;
+                      const tab = tabs[i] || { label: `Tab ${i + 1}` };
+                      const isActive = i === activeTabIdx;
+                      return (
+                        <div key={i} style={{
+                          padding: "0 12px", display: "flex", alignItems: "center",
+                          fontSize: "11px", color: isActive ? "#ffffff" : "#888",
+                          background: isActive ? "#3c3c3c" : "transparent",
+                          borderRight: "1px solid #555",
+                          borderBottom: isActive ? "2px solid #569cd6" : "none",
+                          whiteSpace: "nowrap", flexShrink: 0
+                        }}>
+                          {tab.label || `Tab ${i + 1}`}
+                        </div>
+                      );
+                    })}
+                    {canScrollRight && (
+                      <button
+                        onClick={e => { e.stopPropagation(); setTabScrollOffset(prev => ({ ...prev, [comp.id]: scrollOffset + 1 })); }}
+                        style={{ background: "#3c3c3c", border: "none", color: "#aaa", cursor: "pointer", padding: "0 4px", flexShrink: 0, fontSize: "12px", marginLeft: "auto" }}
+                      >▶</button>
+                    )}
+                  </div>
+                );
+              })()
+            )}
             {/* Content area */}
             <div style={{ flex: 1, position: "relative", overflow: "hidden" }}>
               <span style={{
@@ -1382,6 +1416,21 @@ setSchemaWithHistory(INITIAL_SCHEMA);
                           onChange={e => updateComponentProps(selectedComp.id, 'tabHeight', Math.max(18, parseInt(e.target.value)||28))}
                           style={{ width: "100%", background: "#3c3c3c", border: "1px solid #555", color: "white", padding: "3px" }}
                         />
+                      </div>
+                    );
+                  }
+                  if (selectedComp.type === 'ttk.Notebook' && key === 'tabSide') {
+                    return (
+                      <div key={key} style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                        <span style={{ fontSize: "10px", color: "#ccc" }}>tabSide:</span>
+                        <select
+                          value={selectedComp.props.tabSide || 'top'}
+                          onChange={e => updateComponentProps(selectedComp.id, 'tabSide', e.target.value)}
+                          style={{ background: "#3c3c3c", border: "1px solid #555", color: "white", padding: "3px" }}
+                        >
+                          <option value="top">top (orizzontale)</option>
+                          <option value="left">left (verticale)</option>
+                        </select>
                       </div>
                     );
                   }
