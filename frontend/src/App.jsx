@@ -841,7 +841,7 @@ setSchemaWithHistory(INITIAL_SCHEMA);
                     {canScrollLeft && (
                       <button
                         onClick={e => { e.stopPropagation(); setTabScrollOffset(prev => ({ ...prev, [comp.id]: Math.max(0, scrollOffset - 1) })); }}
-                        style={{ background: "#3c3c3c", border: "none", color: "#aaa", cursor: "pointer", padding: "0 4px", flexShrink: 0, fontSize: "12px" }}
+                        style={{ background: "#3c3c3c", border: "none", color: "#aaa", cursor: "pointer", padding: "0 4px", flexShrink: 0, fontSize: "12px", width: "20px" }}
                       >◀</button>
                     )}
                     {Array.from({ length: tabCount }, (_, i) => {
@@ -1123,10 +1123,26 @@ setSchemaWithHistory(INITIAL_SCHEMA);
                 const relX = e.clientX - rect.left;
                 const relY = e.clientY - rect.top;
                 const tabHeight = comp.props?.tabHeight || 28;
-                if (relY <= tabHeight) {
+                if (relY <= tabHeight && (comp.props?.tabSide || 'top') === 'top') {
+                  const AVG_TAB_W = 80;
+                  const ARROW_W = 20;
                   const tabCount = comp.tabs.length;
-                  const tabWidth = rect.width / tabCount;
-                  const tabIdx = Math.min(Math.floor(relX / tabWidth), tabCount - 1);
+                  const visibleCount = Math.max(1, Math.floor((rect.width - (tabCount > 3 ? 40 : 0)) / AVG_TAB_W));
+                  const scrollOffset = Math.min(tabScrollOffset[comp.id] ?? 0, Math.max(0, tabCount - visibleCount));
+                  const canScrollLeft = scrollOffset > 0;
+                  const canScrollRight = scrollOffset + visibleCount < tabCount;
+                  const arrowOffset = canScrollLeft ? ARROW_W : 0;
+                  const adjustedX = relX - arrowOffset;
+                  if (canScrollLeft && adjustedX < 0) {
+                    setTabScrollOffset(prev => ({ ...prev, [comp.id]: Math.max(0, scrollOffset - 1) }));
+                    return;
+                  }
+                  const visibleTabIdx = Math.floor(adjustedX / AVG_TAB_W);
+                  if (canScrollRight && visibleTabIdx >= visibleCount) {
+                    setTabScrollOffset(prev => ({ ...prev, [comp.id]: scrollOffset + 1 }));
+                    return;
+                  }
+                  const tabIdx = Math.min(scrollOffset + Math.max(0, visibleTabIdx), tabCount - 1);
                   setActiveNotebookTab(prev => ({ ...prev, [comp.id]: tabIdx }));
                 } else {
                   // Click in content area — hit-test children
