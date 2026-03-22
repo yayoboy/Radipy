@@ -192,16 +192,39 @@ function App() {
 
       const targetPane = findTargetPane(x, y);
 
+      // Helper: find which Notebook tab the drop falls into
+      const findTargetNotebookTab = (dropX, dropY) => {
+        const comps = schema.pages[activePage]?.components || [];
+        for (const comp of comps) {
+          if (comp.type !== 'ttk.Notebook' || !comp.tabs || comp.tabs.length === 0) continue;
+          const { x, y, width, height } = comp.layout;
+          if (dropX < x || dropX > x + width || dropY < y || dropY > y + height) continue;
+          const tabHeight = comp.props?.tabHeight || 28;
+          // Must be in content area (below tab bar)
+          if (dropY < y + tabHeight) continue;
+          // Use currently active tab
+          const tabIdx = activeNotebookTab[comp.id] ?? 0;
+          const tab = comp.tabs[tabIdx];
+          if (!tab) continue;
+          const relX = Math.max(0, snapToGrid(dropX - x, gridEnabled));
+          const relY = Math.max(0, snapToGrid(dropY - y - tabHeight, gridEnabled));
+          return { notebookId: comp.id, tabId: tab.id, tabIdx, relX, relY };
+        }
+        return null;
+      };
+
+      const targetNotebookTab = !targetPane ? findTargetNotebookTab(x, y) : null;
+
       const newComp = {
         type: data.widget.type,
         id: generateId(data.widget.type.replace("ttk.", "").replace("MapView", "Map").replace("MatplotlibChart", "Chart")),
         props: { ...data.widget.defaultProps },
         layout: {
-          x: targetPane ? targetPane.relX : x,
-          y: targetPane ? targetPane.relY : y,
+          x: targetPane ? targetPane.relX : targetNotebookTab ? targetNotebookTab.relX : x,
+          y: targetPane ? targetPane.relY : targetNotebookTab ? targetNotebookTab.relY : y,
           ...data.widget.defaultLayout
         },
-        ...(targetPane ? { parentId: targetPane.paneId } : {})
+        ...(targetPane ? { parentId: targetPane.paneId } : targetNotebookTab ? { parentId: targetNotebookTab.tabId } : {})
       };
 
       // Add PanedWindow panes if this is a PanedWindow being dropped
@@ -224,6 +247,7 @@ function App() {
       }
 
       if (targetPane) {
+        // existing pane logic (keep as-is)
         setSchemaWithHistory(prev => {
           const newPages = prev.pages.map((page, pi) => {
             if (pi !== activePage) return page;
@@ -244,7 +268,29 @@ function App() {
           });
           return { ...prev, pages: newPages };
         });
+      } else if (targetNotebookTab) {
+        setSchemaWithHistory(prev => {
+          const newPages = prev.pages.map((page, pi) => {
+            if (pi !== activePage) return page;
+            return {
+              ...page,
+              components: page.components.map(c => {
+                if (c.id !== targetNotebookTab.notebookId) return c;
+                return {
+                  ...c,
+                  tabs: c.tabs.map(t =>
+                    t.id !== targetNotebookTab.tabId
+                      ? t
+                      : { ...t, components: [...t.components, newComp] }
+                  )
+                };
+              })
+            };
+          });
+          return { ...prev, pages: newPages };
+        });
       } else {
+        // existing top-level logic (keep as-is)
         setSchemaWithHistory(prev => {
           const newPages = prev.pages.map((page, pi) => {
             if (pi !== activePage) return page;
@@ -409,6 +455,21 @@ const updateComponentProps = (id, key, value) => {
             });
             if (newPanes !== c.panes) return { ...c, panes: newPanes };
           }
+          // Try inside notebook tab children
+          if (c.tabs) {
+            const newTabs = c.tabs.map(tab => {
+              const tabFound = tab.components.some(ch => ch.id === id);
+              if (!tabFound) return tab;
+              found = true;
+              return {
+                ...tab,
+                components: tab.components.map(ch =>
+                  ch.id !== id ? ch : { ...ch, layout: { ...ch.layout, ...updates } }
+                )
+              };
+            });
+            if (newTabs !== c.tabs) return { ...c, tabs: newTabs };
+          }
           return c;
         });
         if (!found) return page;
@@ -424,11 +485,24 @@ const updateComponentProps = (id, key, value) => {
         if (pi !== activePage) return page;
         return {
           ...page,
-          components: page.components.filter(c => c.id !== id)
+          components: page.components
+            .filter(c => c.id !== id)
+            .map(c => {
+              if (c.tabs) {
+                return {
+                  ...c,
+                  tabs: c.tabs.map(t => ({
+                    ...t,
+                    components: t.components.filter(ch => ch.id !== id)
+                  }))
+                };
+              }
+              return c;
+            })
         };
       })
     }));
-    if(selectedId === id) setSelectedId(null);
+    if (selectedId === id) setSelectedId(null);
   };
 
   // ---- Tabs ----
