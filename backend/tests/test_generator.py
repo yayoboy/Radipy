@@ -358,3 +358,74 @@ def test_panedwindow_nested_widgets():
     code = generate_tkinter_code(project)
     assert "self.btn_1 = tk.Button(self._frame_paned_1_pane_0" in code
     assert "self.btn_1.place(x=10, y=10" in code
+
+
+def test_notebook_generates_frames_and_add():
+    project = {
+        "theme": "",
+        "pages": [{
+            "name": "Main",
+            "components": [{
+                "type": "ttk.Notebook",
+                "id": "notebook_1",
+                "props": {"tabCount": 2, "tabHeight": 28},
+                "layout": {"x": 0, "y": 0, "width": 400, "height": 300},
+                "tabs": [
+                    {"id": "notebook_1_tab_0", "label": "Tab 1", "components": []},
+                    {"id": "notebook_1_tab_1", "label": "Tab 2", "components": []}
+                ]
+            }]
+        }]
+    }
+    code = generate_tkinter_code(project)
+    assert "self.notebook_1 = ttk.Notebook" in code
+    assert "self._tab_notebook_1_tab_0 = ttk.Frame(self.notebook_1)" in code
+    assert "self.notebook_1.add(self._tab_notebook_1_tab_0, text='Tab 1')" in code
+    assert "self._tab_notebook_1_tab_1 = ttk.Frame(self.notebook_1)" in code
+    assert "self.notebook_1.add(self._tab_notebook_1_tab_1, text='Tab 2')" in code
+
+def test_notebook_nested_widgets():
+    project = {
+        "theme": "",
+        "pages": [{
+            "name": "Main",
+            "components": [{
+                "type": "ttk.Notebook",
+                "id": "notebook_1",
+                "props": {"tabCount": 2, "tabHeight": 28},
+                "layout": {"x": 0, "y": 0, "width": 400, "height": 300},
+                "tabs": [
+                    {"id": "notebook_1_tab_0", "label": "Tab 1", "components": [
+                        {"type": "Button", "id": "btn_1",
+                         "parentId": "notebook_1_tab_0",
+                         "props": {"text": "Click"},
+                         "layout": {"x": 10, "y": 10, "width": 80, "height": 30}}
+                    ]},
+                    {"id": "notebook_1_tab_1", "label": "Tab 2", "components": []}
+                ]
+            }]
+        }]
+    }
+    code = generate_tkinter_code(project)
+    assert "self.btn_1 = tk.Button(self._tab_notebook_1_tab_0" in code
+    assert "self.btn_1.place(x=10, y=10" in code
+
+def test_notebook_tab_height_style():
+    project = {
+        "theme": "",
+        "pages": [{
+            "name": "Main",
+            "components": [{
+                "type": "ttk.Notebook",
+                "id": "notebook_1",
+                "props": {"tabCount": 2, "tabHeight": 36},
+                "layout": {"x": 0, "y": 0, "width": 400, "height": 300},
+                "tabs": [
+                    {"id": "notebook_1_tab_0", "label": "Tab 1", "components": []},
+                    {"id": "notebook_1_tab_1", "label": "Tab 2", "components": []}
+                ]
+            }]
+        }]
+    }
+    code = generate_tkinter_code(project)
+    assert "style.configure('TNotebook.Tab'" in code

@@ -101,7 +101,7 @@ def generate_tkinter_code(project_json):
             props = comp.get("props", {})
             layout = comp.get("layout", {})
 
-            base_props = {k: v for k, v in props.items() if k not in ["tabs", "iconName", "color", "size", "commandEvent", "paneCount"]}
+            base_props = {k: v for k, v in props.items() if k not in ["tabs", "iconName", "color", "size", "commandEvent", "paneCount", "tabCount", "tabHeight"]}
 
             if "commandEvent" in props and props["commandEvent"].strip():
                 cmd_fn = props["commandEvent"].strip()
@@ -136,18 +136,7 @@ def generate_tkinter_code(project_json):
             if height is not None:
                 place_params += f", height={height}"
 
-            if comp_type == "ttk.Notebook":
-                lines.append(f"        {comp_id} = ttk.Notebook({parent}, {kwargs_str})")
-                tabs_list = props.get("tabs", "Tab 1").split(",")
-                for t_idx, tab_name in enumerate(tabs_list):
-                    frame_id = f"{comp_id}_f{t_idx}"
-                    if theme:
-                        lines.append(f"        {frame_id} = ttk.Frame({comp_id})")
-                    else:
-                        lines.append(f"        {frame_id} = tk.Frame({comp_id})")
-                    lines.append(f"        {comp_id}.add({frame_id}, text='{tab_name.strip()}')")
-
-            elif comp_type == "Icon":
+            if comp_type == "Icon":
                 icon_name = props.get("iconName", "home")
                 lines.append(f"        # TODO: Usa PhotoImage per l'icona Material '{icon_name}' (.png)")
                 lines.append(f"        {comp_id} = tk.Label({parent}, text='[{icon_name} icon]')")
@@ -167,6 +156,63 @@ def generate_tkinter_code(project_json):
                 lines.append(f"        self.ax_{comp.get('id')}.set_title('{chart_title}')")
                 lines.append(f"        self.canvas_{comp.get('id')} = FigureCanvasTkAgg(self.fig_{comp.get('id')}, master={parent})")
                 lines.append(f"        {comp_id} = self.canvas_{comp.get('id')}.get_tk_widget()")
+
+            elif comp_type == "ttk.Notebook":
+                tab_height = props.get("tabHeight", 28)
+                padding_y = max(1, tab_height // 4)
+                lines.append(f"        style = ttk.Style()")
+                lines.append(f"        style.configure('TNotebook.Tab', padding=[10, {padding_y}])")
+                lines.append(f"        {comp_id} = ttk.Notebook({parent})")
+                lines.append(f"        {comp_id}.place({place_params})")
+                lines.append("")
+
+                tabs = comp.get("tabs", [])
+                for tab in tabs:
+                    tab_id = tab.get("id", "")
+                    tab_label_raw = tab.get("label", "Tab")
+                    tab_label = tab_label_raw.replace("'", "\\'")
+                    tab_frame_var = f"self._tab_{tab_id.replace('-', '_')}"
+                    lines.append(f"        {tab_frame_var} = ttk.Frame({comp_id})")
+                    lines.append(f"        {comp_id}.add({tab_frame_var}, text='{tab_label}')")
+                    lines.append("")
+
+                    # Generate child widgets inside this tab
+                    for child in tab.get("components", []):
+                        child_type = child.get("type")
+                        child_id = f"self.{child.get('id')}"
+                        child_props = child.get("props", {})
+                        child_layout = child.get("layout", {})
+                        child_base_props = {k: v for k, v in child_props.items()
+                                            if k not in ["tabs", "iconName", "color", "size", "commandEvent", "paneCount", "tabCount", "tabHeight"]}
+                        if "commandEvent" in child_props and child_props["commandEvent"].strip():
+                            cmd_fn = child_props["commandEvent"].strip()
+                            commands.add(cmd_fn)
+                            child_base_props["command"] = f"self.{cmd_fn}"
+                        child_kwargs = ", ".join(
+                            f"{k}={v}" if k == "command" else
+                            f"{k}='{v}'" if isinstance(v, str) else f"{k}={v}"
+                            for k, v in child_base_props.items()
+                        )
+                        if theme:
+                            child_cls = child_type.split(".")[1] if child_type.startswith("ttk.") else child_type
+                            lines.append(f"        {child_id} = ttk.{child_cls}({tab_frame_var}, {child_kwargs})")
+                        else:
+                            if child_type.startswith("ttk."):
+                                child_cls = child_type.split(".")[1]
+                                lines.append(f"        {child_id} = ttk.{child_cls}({tab_frame_var}, {child_kwargs})")
+                            else:
+                                lines.append(f"        {child_id} = tk.{child_type}({tab_frame_var}, {child_kwargs})")
+                        cx = child_layout.get("x", 0)
+                        cy = child_layout.get("y", 0)
+                        cw = child_layout.get("width")
+                        ch = child_layout.get("height")
+                        cp = f"x={cx}, y={cy}"
+                        if cw is not None: cp += f", width={cw}"
+                        if ch is not None: cp += f", height={ch}"
+                        lines.append(f"        {child_id}.place({cp})")
+                        lines.append("")
+
+                continue  # Skip generic place() call
 
             elif comp_type == "ttk.PanedWindow":
                 orient = props.get("orient", "horizontal")
