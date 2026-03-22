@@ -1143,14 +1143,28 @@ setSchemaWithHistory(INITIAL_SCHEMA);
               // For Notebook: detect which tab was clicked in the tab bar
               if (comp.type === 'ttk.Notebook' && comp.tabs?.length > 0) {
                 const rect = e.currentTarget.getBoundingClientRect();
+                const relX = e.clientX - rect.left;
                 const relY = e.clientY - rect.top;
                 const tabHeight = comp.props?.tabHeight || 28;
                 if (relY <= tabHeight) {
-                  const relX = e.clientX - rect.left;
                   const tabCount = comp.tabs.length;
                   const tabWidth = rect.width / tabCount;
                   const tabIdx = Math.min(Math.floor(relX / tabWidth), tabCount - 1);
                   setActiveNotebookTab(prev => ({ ...prev, [comp.id]: tabIdx }));
+                } else {
+                  // Click in content area — hit-test children
+                  const activeTabIdx = activeNotebookTab[comp.id] ?? 0;
+                  const tabChildren = comp.tabs[activeTabIdx]?.components || [];
+                  const clickX = relX;
+                  const clickY = relY - tabHeight;
+                  // Reverse so topmost widget wins on overlap
+                  const hit = [...tabChildren].reverse().find(child =>
+                    clickX >= child.layout.x && clickX <= child.layout.x + child.layout.width &&
+                    clickY >= child.layout.y && clickY <= child.layout.y + child.layout.height
+                  );
+                  if (hit) {
+                    setSelectedId(hit.id);
+                  }
                 }
               }
             }}
