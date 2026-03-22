@@ -1341,10 +1341,13 @@ setSchemaWithHistory(INITIAL_SCHEMA);
                     return (
                       <div key={key} style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
                         <span style={{ fontSize: "10px", color: "#ccc" }}>tabCount:</span>
-                        <select
+                        <input
+                          type="number"
+                          min={1}
+                          max={20}
                           value={selectedComp.props.tabCount || 2}
                           onChange={e => {
-                            const newCount = parseInt(e.target.value);
+                            const newCount = Math.max(1, parseInt(e.target.value) || 1);
                             setSchemaWithHistory(prev => ({
                               ...prev,
                               pages: prev.pages.map((page, pi) => {
@@ -1366,12 +1369,8 @@ setSchemaWithHistory(INITIAL_SCHEMA);
                               })
                             }));
                           }}
-                          style={{ background: "#3c3c3c", border: "1px solid #555", color: "white", padding: "3px" }}
-                        >
-                          <option value={2}>2</option>
-                          <option value={3}>3</option>
-                          <option value={4}>4</option>
-                        </select>
+                          style={{ width: "100%", background: "#3c3c3c", border: "1px solid #555", color: "white", padding: "3px" }}
+                        />
                       </div>
                     );
                   }
